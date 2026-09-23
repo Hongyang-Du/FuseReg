@@ -1,0 +1,51 @@
+[project]
+name = "fusereg"
+version = "0.1.0"
+description = "Regularizing layer fusion in representation autoencoders"
+requires-python = ">=3.10,<3.14"
+license = { file = "LICENSE" }
+dependencies = [
+  "torch==2.10.0",
+  "torchvision==0.25.0",
+  "numpy>=1.26,<3",
+  "omegaconf==2.3.0",
+  "transformers==4.57.1",
+  "huggingface-hub>=0.36,<1",
+  "timm==1.0.26",
+  "einops==0.8.1",
+  "datasets==4.4.2",
+  "safetensors>=0.7,<1",
+  "torchmetrics==1.8.2",
+  "torch-fidelity==0.3.0",
+  "lpips==0.1.4",
+  "scipy>=1.15,<2",
+  "Pillow>=11,<13",
+  "requests>=2.31,<3",
+  "tqdm>=4.67,<5",
+  "wandb==0.23.1",
+]
+
+[project.optional-dependencies]
+train = ["gram-newton-schulz @ git+https://github.com/nanovisionx/gmuon.git@4863cc2446f09a54d937c579d4e775c125f5ab2e"]
+dev = ["pytest>=8", "ruff>=0.15"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+
+[tool.ruff.lint]
+select = ["F821", "F822", "F823"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["train_decoder", "train", "compute_latent_stats", "sample_dit", "eval_fid_dit", "eval_reconstruction"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

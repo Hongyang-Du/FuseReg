@@ -1,0 +1,8 @@
+/* FuseReg overrides on top of the shared paper template */
+.header-wrapper::before { background-image: none; }
+
+d-figure figure { margin-left: auto; margin-right: auto; }
+
+/* Table screenshots read best on a light card */
+#fig-recon-table img,
+#fig-joint img { background: #fff; }

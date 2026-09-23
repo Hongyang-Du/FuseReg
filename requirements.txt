@@ -1,0 +1,3 @@
+# Install the base evaluation/training dependencies declared in pyproject.toml.
+# Exact paper DiT training additionally needs: pip install '.[train]'
+.

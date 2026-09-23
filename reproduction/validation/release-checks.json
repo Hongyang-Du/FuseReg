@@ -1,0 +1,25 @@
+{
+  "cli_help_passed": [
+    "train_decoder",
+    "train",
+    "compute_latent_stats",
+    "sample_dit",
+    "eval_fid_dit",
+    "eval_reconstruction"
+  ],
+  "configs_validated": 19,
+  "config_targets_resolved": true,
+  "source_files_parsed": 55,
+  "platform": "macOS arm64 CPU",
+  "scope": "Configuration/CLI, CPU compatibility and synthetic training checks only; no ImageNet numerical evaluation.",
+  "validation_date": "2026-09-19",
+  "source_revision": "cf071846f097ac4d79be56afacde99d751f612a7",
+  "source_revision_note": "Recorded release snapshot; later commits may include code and documentation updates. Use the live Code checks workflow for the current branch.",
+  "pytest_passed": 25,
+  "pytest_subtests_passed": 3,
+  "ruff_passed": true,
+  "git_diff_check_passed": true,
+  "real_p095_decoder_cpu_forward": "passed",
+  "stage1_parity_report": "paper_cleanup_stage1.json",
+  "stage2_parity_report": "paper_cleanup_stage2.json"
+}

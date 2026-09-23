@@ -1,0 +1,57 @@
+{
+  "source_hashes": {
+    "md5": "27d5b64ad349fd8af6c8b38849e9f92c",
+    "sha256": "49cf7f50310dd836f9d8282966c4ea5c188fbf03cbfe5504a09efe5fcec79a24",
+    "crc32c_base64": "G9W7dA=="
+  },
+  "hf_safetensors_hashes": {
+    "md5": "717f336b697a23f57c57393bebe4f735",
+    "sha256": "f82adb05ca36c5bc22630a86c7439a630769bc2dd7c8f2a5e4043f0e38120476",
+    "crc32c_base64": "Jo2i1Q=="
+  },
+  "all_ema_tensors_identical": true,
+  "tensor_count": 456,
+  "epoch": 16,
+  "global_step": 80064,
+  "layers": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23
+  ],
+  "ema_combine_empty": true,
+  "original_drive_headers": {
+    "Content-Length": "6666644934",
+    "X-Goog-Hash": "crc32c=G9W7dA==",
+    "Content-MD5": null,
+    "Last-Modified": "Fri, 21 Aug 2026 17:09:14 GMT",
+    "ETag": null
+  },
+  "copy_drive_headers": {
+    "Content-Length": "6666644934",
+    "X-Goog-Hash": "crc32c=G9W7dA==",
+    "Content-MD5": null,
+    "Last-Modified": "Sun, 13 Sep 2026 19:13:57 GMT",
+    "ETag": null
+  },
+  "copy_size_crc32c_match": true
+}

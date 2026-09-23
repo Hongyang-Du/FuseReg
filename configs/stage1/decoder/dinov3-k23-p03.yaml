@@ -1,0 +1,57 @@
+# Preserved oldnorm scientific settings; local data/checkpoint paths must be supplied.
+combine:
+  target: stage1.combine.MLSCombine
+  params:
+    layers:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    - 17
+    - 18
+    - 19
+    - 20
+    - 21
+    - 22
+    - 23
+    weighting: random_drop
+    p_drop: 0.3
+decoder:
+  config_path: configs/decoder/ViTXL
+  latent_dim: 1024
+loss:
+  lpips_w: 1.0
+  gan:
+    disc_weight: 0.75
+    disc_start: 8
+data:
+  data_dir: data/imagenet-256
+  image_size: 256
+  val_npz: data_eval/imagenet-256-val.npz
+  val_n: 100
+training:
+  epochs: 16
+  batch_size: 32
+  lr: 0.0002
+  warmup_epochs: 2
+  ema_decay: 0.9995
+  precision: bf16
+  ckpt_every: 1
+  log_every: 50
+  seed: 42
+  out_dir: outputs/dinov3-k23-p03
+wandb:
+  enabled: false
+  project: fusereg

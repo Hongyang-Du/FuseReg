@@ -1,0 +1,16 @@
+{
+  "fusion_exact_parity_cases": 108,
+  "tiny_decoder_state_and_output_exact_parity": true,
+  "real_p095_safetensors_strict_load": true,
+  "decoder_tensor_count": 456,
+  "missing_keys": [],
+  "unexpected_keys": [],
+  "no_cuda_evaluation": true,
+  "baseline_commit": "1b6b9283718670e70dc31cf6e74b8a4e7ee087d0",
+  "validation_scope": "CPU structural and arithmetic checks; ImageNet/CUDA paper metrics have not been run.",
+  "discriminator_s8_state_dict_and_head_output_exact_parity": true,
+  "discriminator_transformer_block_output_exact_parity": true,
+  "real_p095_training_checkpoint_raw_and_ema_strict_load": true,
+  "checkpoint_artifact": "dinov3-vitl/decoder_k23/p0.95.safetensors",
+  "checkpoint_sha256": "f82adb05ca36c5bc22630a86c7439a630769bc2dd7c8f2a5e4043f0e38120476"
+}

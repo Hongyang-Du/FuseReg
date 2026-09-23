@@ -1,0 +1,79 @@
+[
+  {
+    "config": "configs/stage1/decoder/dinov3-k23-p005.yaml",
+    "source": "stage1/decoder/randomdrop-plain-k23-nano-p005-oldnorm.yaml"
+  },
+  {
+    "config": "configs/stage1/decoder/dinov3-k23-p01.yaml",
+    "source": "stage1/decoder/randomdrop-plain-k23-nano-p01-oldnorm.yaml"
+  },
+  {
+    "config": "configs/stage1/decoder/dinov3-k23-p03.yaml",
+    "source": "stage1/decoder/randomdrop-plain-k23-nano-p03-oldnorm.yaml"
+  },
+  {
+    "config": "configs/stage1/decoder/dinov3-k23-p05.yaml",
+    "source": "stage1/decoder/randomdrop-plain-k23-nano-p05-oldnorm.yaml"
+  },
+  {
+    "config": "configs/stage1/decoder/dinov3-k23-p07.yaml",
+    "source": "stage1/decoder/randomdrop-plain-k23-nano-p07-oldnorm.yaml"
+  },
+  {
+    "config": "configs/stage1/decoder/dinov3-k23-p09.yaml",
+    "source": "stage1/decoder/randomdrop-plain-k23-nano-p09-oldnorm.yaml"
+  },
+  {
+    "config": "configs/stage1/decoder/dinov3-k23-p095.yaml",
+    "source": "stage1/decoder/randomdrop-plain-k23-nano-p095-oldnorm.yaml"
+  },
+  {
+    "config": "configs/stage1/decoder/dinov3-k23-p00.yaml",
+    "source": "stage1/decoder/randomdrop-plain-k23-nano-p03-oldnorm.yaml",
+    "note": "Derived no-drop template from p03; original p00 training recipe not recovered."
+  },
+  {
+    "config": "configs/stage2/training/dinov3-k23-fulltarget-p00-ditb.yaml",
+    "source": "stage2/training/imagenet-dinov3l-omni-randomdrop-fulltarget-plain-k23-p00-ditb.yaml"
+  },
+  {
+    "config": "configs/stage2/training/dinov3-k23-fulltarget-p00-ditxl.yaml",
+    "source": "stage2/training/imagenet-dinov3l-omni-randomdrop-fulltarget-plain-k23-p00-ditxl.yaml"
+  },
+  {
+    "config": "configs/stage2/training/dinov3-k23-fulltarget-p005-ditb.yaml",
+    "source": "stage2/training/imagenet-dinov3l-omni-randomdrop-fulltarget-plain-k23-p005-ditb.yaml"
+  },
+  {
+    "config": "configs/stage2/training/dinov3-k23-fulltarget-p01-ditb.yaml",
+    "source": "stage2/training/imagenet-dinov3l-omni-randomdrop-fulltarget-plain-k23-p01-ditb.yaml"
+  },
+  {
+    "config": "configs/stage2/training/dinov3-k23-fulltarget-p03-ditb.yaml",
+    "source": "stage2/training/imagenet-dinov3l-omni-randomdrop-fulltarget-plain-k23-p03-ditb.yaml"
+  },
+  {
+    "config": "configs/stage2/training/dinov3-k23-fulltarget-p05-ditb.yaml",
+    "source": "stage2/training/imagenet-dinov3l-omni-randomdrop-fulltarget-plain-k23-p05-ditb.yaml"
+  },
+  {
+    "config": "configs/stage2/training/dinov3-k23-fulltarget-p05-ditxl.yaml",
+    "source": "stage2/training/imagenet-dinov3l-omni-randomdrop-fulltarget-plain-k23-p05-ditxl.yaml"
+  },
+  {
+    "config": "configs/stage2/training/dinov3-k23-fulltarget-p07-ditb.yaml",
+    "source": "stage2/training/imagenet-dinov3l-omni-randomdrop-fulltarget-plain-k23-p07-ditb.yaml"
+  },
+  {
+    "config": "configs/stage2/training/dinov3-k23-fulltarget-p07-ditxl.yaml",
+    "source": "stage2/training/imagenet-dinov3l-omni-randomdrop-fulltarget-plain-k23-p07-ditxl.yaml"
+  },
+  {
+    "config": "configs/stage2/training/dinov3-k23-fulltarget-p09-ditb.yaml",
+    "source": "stage2/training/imagenet-dinov3l-omni-randomdrop-fulltarget-plain-k23-p09-ditb.yaml"
+  },
+  {
+    "config": "configs/stage2/training/dinov3-k23-fulltarget-p09-ditxl.yaml",
+    "source": "stage2/training/imagenet-dinov3l-omni-randomdrop-fulltarget-plain-k23-p09-ditxl.yaml"
+  }
+]
