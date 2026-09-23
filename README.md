@@ -77,238 +77,61 @@ Averaging over the retained layers keeps the deployment latent unchanged in expe
 
 Because the encoder is frozen, this reflects the decoder's ability to recover information already available across depths: improving the readout of a fixed representation can improve generation even when the generator and sampled latents are unchanged.
 
-## Quick start
+## 1. Environment setup
 
-The manifest and planner can be inspected without credentials, checkpoints, ImageNet, or a package install:
+Validated with **Python 3.11** on a **Linux CUDA machine** (package metadata supports 3.10–3.13).
 
 ```bash
 git clone https://github.com/Hongyang-Du/FuseReg.git
 cd FuseReg
-python3 scripts/plan_reproduction.py --table appendix --list
-```
-
-The planner only reads release metadata; it does not download assets, load a model, or claim that an experiment is ready. The reconstruction path below uses **separately licensed, access-controlled assets** and is not a zero-asset demo. The release was validated with **Python 3.11**; package metadata supports Python 3.10–3.13. Use a **Linux CUDA machine** for full experiments.
-
-### 1. Install
-
-```bash
 python3.11 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt   # installs torch==2.10.0, torchvision==0.25.0
+python -m pip install '.[train]'             # pinned GMuon optimizer, needed for DiT training
 ```
 
-`requirements.txt` installs the project and the exact pair `torch==2.10.0`, `torchvision==0.25.0`. If the default index is not appropriate for your CUDA runtime, install that pair from the matching [official PyTorch wheel index](https://pytorch.org/get-started/locally/) first, then install FuseReg. For example, for a system compatible with the CUDA 12.8 index:
+If the default index does not match your CUDA runtime, install the same torch pair from the matching [PyTorch wheel index](https://pytorch.org/get-started/locally/) first (e.g. `--index-url https://download.pytorch.org/whl/cu128`), then install FuseReg.
 
-```bash
-python -m pip install --index-url https://download.pytorch.org/whl/cu128 \
-  'torch==2.10.0' 'torchvision==0.25.0'
-python -m pip install -e . --extra-index-url https://download.pytorch.org/whl/cu128
-python - <<'PY'
-import torch, torchvision
-print(torch.__version__, torchvision.__version__, torch.version.cuda)
-PY
-```
-
-Replace `cu128` with the official index matching your system. The second command reuses the already installed exact pair while resolving the remaining project dependencies. Do not silently substitute another PyTorch pair for a paper-comparison run.
-
-### 2. Download a decoder
-
-The checkpoint repository is currently access-controlled. Request/obtain access on [Hugging Face](https://huggingface.co/Hongyang-Du/FuseReg), authenticate with `hf auth login`, then download and verify the paper's p = 0.95 robustness decoder:
+**Checkpoints** (access-controlled on [Hugging Face](https://huggingface.co/Hongyang-Du/FuseReg); see the [checkpoint manifest](reproduction/checkpoints.json)):
 
 ```bash
 hf auth login
-
-hf download Hongyang-Du/FuseReg \
-  dinov3-vitl/decoder_k23/p0.95.safetensors \
-  --local-dir checkpoints
-
-python scripts/verify_checkpoints.py \
-  --root checkpoints \
-  --file dinov3-vitl/decoder_k23/p0.95.safetensors
+hf download Hongyang-Du/FuseReg --local-dir checkpoints
+python scripts/verify_checkpoints.py --root checkpoints
 ```
 
-You also need the frozen encoder and evaluation images:
+**External assets** (obtain under their own terms):
 
-| Asset | Expected location or format |
+| Asset | Location |
 |---|---|
-| DINOv3-L weights | Obtain under the [DINOv3 access terms](https://huggingface.co/facebook/dinov3-vitl16-pretrain-lvd1689m); place at `pretrained_models/encoders/dinov3/dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth` |
-| ImageNet evaluation images | `data_eval/imagenet-256-val.npz` — RGB `uint8`, shape `[N, 256, 256, 3]` |
-| DINO S/8 discriminator weights (training only) | `pretrained_models/encoders/dino/dino_vit_small_patch8_224.pth` |
+| DINOv3-L encoder ([access](https://huggingface.co/facebook/dinov3-vitl16-pretrain-lvd1689m)) | `pretrained_models/encoders/dinov3/dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth` (or set `DINOV3_CKPT_DIR`) |
+| DINO S/8 discriminator (decoder training only) | `pretrained_models/encoders/dino/dino_vit_small_patch8_224.pth` |
+| ImageNet train | `data/imagenet/train/` (ImageFolder) or `data/imagenet/imagenet-latents-images/` (Arrow) |
+| ImageNet-256 val | `data_eval/imagenet-256-val.npz` — RGB `uint8`, shape `[N, 256, 256, 3]` |
 
-Set `DINOV3_CKPT_DIR` to use a different encoder-weight directory. The loader fetches the pinned DINOv3 source revision through `torch.hub`; set `DINOV3_REPO_DIR` to a local DINOv3 checkout containing `hubconf.py` for offline clusters. Obtain encoder weights and ImageNet under their respective access terms. The release intentionally does not redistribute ImageNet or claim a newly generated reference archive; the [data format guide](docs/reproduction.md#execution-order-and-result-recording) records the required shape and protocol boundary.
-
-Before any model is loaded, validate the archive header and minimum sample count:
-
-```bash
-python scripts/validate_image_archive.py \
-  data_eval/imagenet-256-val.npz --min-images 100
-```
-
-This checks the first array's dtype and `[N, 256, 256, 3]` shape without reading the image payload. It does **not** verify image values, crop/resize provenance, or agreement with the paper's evaluation cohort.
-
-### 3. Reconstruct images
+For offline clusters, set `DINOV3_REPO_DIR` to a local DINOv3 checkout containing `hubconf.py`. Check the eval archive header before loading any model:
 
 ```bash
-python src/eval_reconstruction.py \
-  --config configs/stage1/decoder/dinov3-k23-p095.yaml \
-  --ckpt checkpoints/dinov3-vitl/decoder_k23/p0.95.safetensors \
-  --val-npz data_eval/imagenet-256-val.npz \
-  --num-images 100 --seed 0 --metrics psnr ssim \
-  --out results/p095-smoke.json
+python scripts/validate_image_archive.py data_eval/imagenet-256-val.npz --min-images 100
 ```
 
-This checks loading and evaluation on 100 images. A 50k evaluation candidate uses `--num-images 50000 --metrics psnr ssim rfid`, but the exact checkpoint mapping, preprocessing and metric protocol must still be verified before calling the result a paper reproduction.
+## 2. Train the decoder
 
-<details>
-<summary><strong>Choose a reconstruction readout</strong></summary>
-
-The paper and released source currently differ in how K7 is identified. Until that mapping is resolved, use K23 as the default checkpoint-compatible readout and label custom subsets explicitly as source-code probes:
-
-| Readout | Argument | Encoder block IDs |
-|---|---|---|
-| K23 | No additional argument | 1–23 |
-| Source-code sparse K7 probe | `--layers 11,13,15,17,19,21,23` | 11, 13, 15, 17, 19, 21, 23 |
-| Layer 11 | `--layers 11` | 11 |
-
-`--layers` uses encoder block IDs; `--idx` uses positions within the configured layer list. Do not silently equate this sparse source probe with every paper baseline labeled “last K7.” The fixed final-layer surrogate remains present for every readout. Use a distinct `--out` path for each experiment.
-
-</details>
-
-<details>
-<summary><strong>Run the 50k K23 evaluation template</strong></summary>
-
-The paired reference/reconstruction arrays require roughly **20 GB of temporary disk**. Point `--work-dir` at fast scratch storage:
-
-```bash
-python src/eval_reconstruction.py \
-  --config configs/stage1/decoder/dinov3-k23-p095.yaml \
-  --ckpt checkpoints/dinov3-vitl/decoder_k23/p0.95.safetensors \
-  --val-npz data_eval/imagenet-256-val.npz \
-  --num-images 50000 --seed 0 --metrics psnr ssim rfid \
-  --decoder-output-normalization encoder \
-  --work-dir /fast/scratch/fusereg-fid \
-  --out results/p095-k23.json
-```
-
-</details>
-
-## Checkpoints
-
-The [checkpoint manifest](reproduction/checkpoints.json) records **13 paper-relevant candidates**, including file paths, SHA-256 hashes and verification scope.
-
-| Family | Layer-drop rates | Checkpoint details |
-|---|---|---|
-| K23 decoder | 0, .05, .1, .3, .5, .7, .9, .95 | 8 EMA exports · ~1.55 GiB each · p=0 normalization unresolved |
-| K23 DiT-XL | .5, .7, .9 | 40-epoch EMA exports · ~3.26 GiB each |
-| No-drop generator | 0 | 40- and 80-epoch candidates · ~3.26 GiB each · table assignment unverified |
-
-Released `safetensors` contain EMA inference weights. Original `.pt` training checkpoints are also supported; inference exports contain no optimizer state for resuming training.
-
-<details>
-<summary><strong>Baseline mapping and normalization</strong></summary>
-
-- The released/source p = 0 decoder candidate and the official RAEv2 K23 decoder are distinct assets.
-- The p = 0 decoder's source checkpoint does not record its output normalization. Confirm the original recipe, then explicitly select `--decoder-output-normalization raw` or `encoder`.
-- Generation requires the latent statistics of the generator's training representation. Matching filenames or tensor shapes do not establish compatible normalization.
-- The fixed-generator decoder-swap table and the XL-grid baseline have different paper targets. Their checkpoint mappings must be verified separately.
-
-See the [checkpoint and protocol guide](docs/reproduction.md#checkpoint-mapping-and-protocol-checks) before a paper comparison.
-
-</details>
-
-## Reproducing the paper's tables
-
-Each table in the paper maps to one command over a set of checkpoints. The planner prints the exact runs for a table, including paper targets and required assets, without loading a model:
-
-```bash
-python scripts/plan_reproduction.py --table tab:recon-main --list
-python scripts/plan_reproduction.py --table appendix --list
-```
-
-| Paper table | Contents | How to reproduce |
-|---|---|---|
-| **Table 1** · reconstruction across fusions | PSNR, SSIM, rFID for the RAEv2 K7, RAEv2 K23 and FuseReg p=.95 decoders under `k=7`, `k=23` and `ℓ11` | `src/eval_reconstruction.py` once per decoder and readout, `--num-images 50000 --metrics psnr ssim rfid` |
-| **Table 2** · two stages, two scales | gFID and IS over the `p_dec` × `p_dit` grid for DiT-Base and DiT-XL, no guidance | `src/eval_fid_dit.py --num-samples 50000 --steps 50 --ig-scale 1.0` per (decoder, generator) pair |
-| **Table 4** (appendix) · decoder rate sweep | 8 decoders × 3 readouts | same command as Table 1, over the eight `p_dec` checkpoints |
-| **Table 5** (appendix) · generation when only the decoder changes | 8 decoders × 2 readouts × 2 guidance settings, with one fixed generator | `src/eval_fid_dit.py` with the generator held fixed, `--ig-scale 1.0` and `--ig-scale 1.78` |
-| **Table 6** (appendix) · DiT-XL rates under guidance | 4 generators × 8 decoders × 2 guidance settings | `src/eval_fid_dit.py --ig-scale 1.78` per pair |
-
-Rather than issuing those commands by hand, `scripts/run_table.py` materializes them from the matrix, runs
-them and chains the comparison, one row at a time:
-
-```bash
-python scripts/run_table.py --table 4 --dry-run
-```
-
-`--table` takes a paper table number, a matrix key or a LaTeX label; the
-[numbering](docs/reproduction.md#paper-table-numbers) is recorded in the matrix. Drop `--dry-run` to execute.
-Rows whose assets are unmapped, or whose protocol is unresolved, are reported as unrunnable with the missing
-asset IDs rather than approximated.
-
-Generation uses **50,000 class-conditional samples** and **50 Euler steps**. In `src/eval_fid_dit.py`, `--ig-scale 1.0` selects no guidance and `--ig-scale 1.78` selects internal guidance.
-
-Figure 3 uses the Table 5 runs, and Figure 4 uses the leave-one-out and single-layer readouts of `src/eval_reconstruction.py`.
-
-**Table 1, FuseReg p = 0.95 row**
-
-| Readout | PSNR ↑ | SSIM ↑ | rFID ↓ |
-|---|---:|---:|---:|
-| `k=23` | 27.52 | 0.826 | 0.42 |
-| last `k=7` | 23.77 | 0.678 | 0.60 |
-| `ℓ11` | 25.13 | 0.735 | 0.45 |
-
-Reconstruction uses **50,000 ImageNet-256 images**; generation uses **50,000 class-conditional samples** and **50 Euler steps**. In `src/eval_fid_dit.py`, `--ig-scale 1.0` is no guidance and `--ig-scale 1.78` is internal guidance.
-
-Compare a finished run against its paper target:
-
-```bash
-python scripts/compare_result.py \
-  --experiment recon-p0p95-k23 \
-  --result results/p095-k23.json \
-  --out results/p095-k23-comparison.json
-```
-
-The [reproduction guide](docs/reproduction.md) covers execution order, asset bindings, baseline mappings and known differences between the manuscript and the source training recipe.
-
-## Training
-
-The **19 training configurations** follow the paper's rate grids:
-
-| Model | Layer-drop rates | Epochs | Recipes |
-|---|---|---:|---|
-| K23 decoder | 0, .05, .1, .3, .5, .7, .9, .95 | 16 | [8 configs](configs/stage1/decoder) |
-| K23 DiT-Base | 0, .05, .1, .3, .5, .7, .9 | 40 | [7 configs](configs/stage2/training) |
-| K23 DiT-XL | 0, .5, .7, .9 | 40 | [4 configs](configs/stage2/training) |
-
-The no-drop decoder config is a derived template; its exact original training recipe remains unresolved. The retained DiT recipe uses **x-prediction**, **logit-normal time sampling** and a **full-fusion target**. Preserve the effective global batch when changing GPU count or gradient accumulation.
-
-<details>
-<summary><strong>Stage 1 · Train a decoder</strong></summary>
+One config per `p_dec` in [`configs/stage1/decoder`](configs/stage1/decoder) (`p00`, `p005`, `p01`, `p03`, `p05`, `p07`, `p09`, `p095`; 16 epochs):
 
 ```bash
 torchrun --standalone --nproc_per_node=8 src/train_decoder.py \
-  --config configs/stage1/decoder/dinov3-k23-p03.yaml \
+  --config configs/stage1/decoder/dinov3-k23-p095.yaml \
   data.data_dir=data/imagenet \
   data.val_npz=data_eval/imagenet-256-val.npz \
-  training.out_dir=outputs/decoder-p03 \
+  training.out_dir=outputs/decoder-p095 \
   loss.gan.disc_ckpt=pretrained_models/encoders/dino/dino_vit_small_patch8_224.pth \
   wandb.enabled=false
 ```
 
-The training loader accepts ImageFolder data under `data/imagenet/train/` or Arrow shards under `data/imagenet/imagenet-latents-images/`. The DINO S/8 discriminator weights are an external dependency and are passed explicitly above.
+## 3. Train the DiT
 
-</details>
-
-<details>
-<summary><strong>Stage 2 · Compute latent statistics and train DiT</strong></summary>
-
-Install the pinned GMuon optimizer:
-
-```bash
-python -m pip install '.[train]'
-```
-
-Compute statistics for the exact full-fusion encoder readout:
+One config per `p_dit` in [`configs/stage2/training`](configs/stage2/training) (DiT-Base: `p00`–`p09`; DiT-XL: `p00`, `p05`, `p07`, `p09`; 40 epochs). First compute latent statistics for the full-fusion readout, then train:
 
 ```bash
 torchrun --standalone --nproc_per_node=1 src/compute_latent_stats.py \
@@ -317,11 +140,7 @@ torchrun --standalone --nproc_per_node=1 src/compute_latent_stats.py \
   --out checkpoints/latent_stats.pt \
   dataset.data_dir=data/imagenet \
   stage_1.params.stage1_ckpt_path=checkpoints/dinov3-vitl/decoder_k23/p0.95.safetensors
-```
 
-Then train the generator. The recipe fixes a global batch of 1024, so the micro-batch is `1024 / (world_size × GRAD_ACCUM_OVERRIDE)`. For example, `GRAD_ACCUM_OVERRIDE=8` gives a micro-batch of 16 on eight processes; choose a divisor compatible with memory while preserving the global batch:
-
-```bash
 GRAD_ACCUM_OVERRIDE=8 torchrun --standalone --nproc_per_node=8 src/train.py \
   --config configs/stage2/training/dinov3-k23-fulltarget-p09-ditxl.yaml \
   --results-dir outputs/ditxl-p09 --precision bf16 \
@@ -330,49 +149,86 @@ GRAD_ACCUM_OVERRIDE=8 torchrun --standalone --nproc_per_node=8 src/train.py \
   stage_1.params.normalization_stat_path=checkpoints/latent_stats.pt
 ```
 
-The provided recipes default to a saved Hugging Face Arrow ImageNet dataset under `data/imagenet/imagenet-latents-images/`. Use the exact training representation's statistics for released generators; newly computed statistics require protocol verification before comparison with the paper.
+The global batch is fixed at 1024 (micro-batch = `1024 / (world_size × GRAD_ACCUM_OVERRIDE)`); keep it when changing GPU count.
+
+## 4. Reproducing the tables
+
+`scripts/run_table.py` builds every evaluation command for a table from [the experiment matrix](reproduction/experiments.json), runs it and compares against the paper value. Add `--dry-run` to only print the commands. Reconstruction uses 50,000 ImageNet-256 images; generation uses 50,000 samples with 50 Euler steps. Rows with unmapped assets are skipped and reported, not approximated. See the [reproduction guide](docs/reproduction.md) for protocol details.
+
+Table 1's baselines and Table 5's K7 generator are official RAEv2 checkpoints. Download them, then list the latent statistics each generator was trained with in `assets.json`:
+
+```bash
+hf download nyu-visionx/RAEv2-models \
+  --include "stage1/imagenet/dinov3l-k7/*" "stage1/imagenet/dinov3l-k23/decoder.pt" "stage2/imagenet/dinov3l-k7/*" \
+  --local-dir checkpoints/raev2-models
+
+cat > assets.json <<'JSON'
+{
+  "latent_stats_k23": "checkpoints/latent_stats.pt",
+  "latent_stats_k7": "checkpoints/raev2-models/stage1/imagenet/dinov3l-k7/stats.pt"
+}
+JSON
+```
+
+<details>
+<summary><strong>Table 1</strong> · Reconstruction across fusions (k=7, k=23, ℓ11)</summary>
+
+```bash
+python scripts/run_table.py --table 1 \
+  --val-npz data_eval/imagenet-256-val.npz --results-dir results/table1
+```
+
+All 9 rows. The official RAEv2 K7/K23 decoders always run with raw `[0, 1]` output, whatever `--decoder-output-normalization` says.
 
 </details>
 
-## Verification and supplement
-
-Release checks recorded on source revision [`cf07184`](https://github.com/Hongyang-Du/FuseReg/commit/cf071846f097ac4d79be56afacde99d751f612a7):
-
-| Check | Recorded result (2026-09-19) |
-|---|---|
-| Test suite | 25 tests + 3 subtests passed |
-| Configurations and CLI entry points | 19 configs + 6 entry points validated |
-| Fusion, decoder and DiT compatibility | Exact agreement in recorded CPU comparisons |
-| p = 0.95 decoder | Real-weight CPU forward passed; all 456 EMA tensors match the original |
-| DiT-XL checkpoint structure | 572 tensor names and shapes match available headers |
-
-Full evidence is in [reproduction/validation](reproduction/validation).
+<details>
+<summary><strong>Table 2</strong> · p<sub>dec</sub> × p<sub>dit</sub> grid, DiT-Base and DiT-XL, no guidance</summary>
 
 ```bash
-python -m pip install '.[dev]'
-python -m pytest -q
-python scripts/build_supplement.py --output dist/fusereg-supplement.zip
+python scripts/run_table.py --table 2 --bindings assets.json \
+  --val-npz data_eval/imagenet-256-val.npz --results-dir results/table2
 ```
 
-The anonymous archive contains source, configurations and a SHA-256 manifest. It substitutes an anonymous README and excludes Git history, credentials, data, checkpoints and local results. Full evaluation additionally requires an anonymous distribution of the external assets. Third-party attribution is preserved.
+Runs the 32 DiT-XL cells (same as the unguided half of Table 6). The 49 DiT-Base cells are skipped: the DiT-Base generators are not in the checkpoint manifest yet.
 
-## Scope and limitations
+</details>
 
-- **Empirical scope.** Current evidence covers ImageNet-256 with a frozen DINOv3-L encoder and DiT-Base/XL under matched budgets. Transfer to other encoders, resolutions, domains and longer schedules has not been verified.
-- **Two rates must be selected separately.** Preferred `p_dec` and `p_dit` values depend on model scale, metric and guidance; the heatmap is not a universal default.
-- **Theory boundary.** The objective decomposition assumes homogeneous linear predictors and squared loss. Nonlinear-model benefits are empirical; mixed reconstruction losses and the complete guided trajectory remain open.
-- **Release boundary.** Full numerical reproduction remains gated by separately licensed assets and the unresolved protocol items in the [reproduction guide](docs/reproduction.md).
+<details>
+<summary><strong>Table 4</strong> (appendix) · Decoder drop-rate sweep, 8 decoders × 3 readouts</summary>
 
-## Repository map
+```bash
+python scripts/run_table.py --table 4 --decoder-output-normalization encoder \
+  --val-npz data_eval/imagenet-256-val.npz --results-dir results/table4
+```
 
-| Path | Contents |
-|---|---|
-| [`src/stage1/`](src/stage1) | Layer fusion, reconstruction decoder and discriminator |
-| [`src/stage2/`](src/stage2) | DiT architecture, full-target loss and Euler sampling |
-| [`configs/`](configs) | Decoder architecture and paper training recipes |
-| [`reproduction/`](reproduction) | Experiment matrix, checkpoint manifest and validation evidence |
-| [`docs/reproduction.md`](docs/reproduction.md) | Evaluation protocol and remaining reproduction dependencies |
-| [`scripts/`](scripts) | Planning, table execution, integrity checks, result comparison and ZIP packaging |
+All 24 rows. `--decoder-output-normalization` is required for the p<sub>dec</sub>=0 decoder (its checkpoint does not record it); without it those 3 rows are skipped.
+
+</details>
+
+<details>
+<summary><strong>Table 5</strong> (appendix) · Fixed generator, swapped decoders, with/without guidance</summary>
+
+```bash
+python scripts/run_table.py --table 5 --bindings assets.json --decoder-output-normalization encoder \
+  --val-npz data_eval/imagenet-256-val.npz --results-dir results/table5
+```
+
+All 32 rows. Use `--bindings`, not `--latent-stats`: the K7 and K23 columns need different statistics.
+
+</details>
+
+<details>
+<summary><strong>Table 6</strong> (appendix) · DiT-XL rates, 4 generators × 8 decoders × 2 guidance settings</summary>
+
+```bash
+python scripts/run_table.py --table 6 --bindings assets.json --decoder-output-normalization encoder \
+  --val-npz data_eval/imagenet-256-val.npz --results-dir results/table6
+```
+
+All 64 rows.
+
+</details>
 
 ## License
 

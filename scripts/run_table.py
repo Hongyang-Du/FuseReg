@@ -20,6 +20,7 @@ from plan_reproduction import inspect_asset, read_json, select_experiments
 
 ROOT = Path(__file__).resolve().parents[1]
 DECODER_CONFIG_DIR = ROOT / "configs" / "stage1" / "decoder"
+OFFICIAL_DECODER_CONFIG = ROOT / "configs" / "stage1" / "official" / "raev2-dinov3l-eval.yaml"
 GENERATOR_CONFIG_DIR = ROOT / "configs" / "stage2" / "training"
 GENERATOR_ARCH = {"appendix_xl": "ditxl", "main_base": "ditb", "appendix_swap": "ditxl"}
 GUIDANCE_SCALE = {None: "1.0", 1.78: "1.78"}
@@ -90,7 +91,7 @@ def resolve_checkpoint(exp, manifest, assets_root, bindings):
     return asset_id, checked, present, mismatched
 
 
-def build_command(exp, ckpt, config, args):
+def build_command(exp, ckpt, config, args, output_normalization=None):
     metrics = [m for m in METRIC_ORDER if m in exp["paper_reported"]]
     if len(metrics) != len(exp["paper_reported"]):
         raise ValueError(f"{exp['id']} reports a metric the reconstruction evaluator does not emit")
@@ -106,8 +107,9 @@ def build_command(exp, ckpt, config, args):
     layers = FEED_LAYERS[exp["fusion"]]
     if layers:
         command += ["--layers", layers]
-    if args.decoder_output_normalization:
-        command += ["--decoder-output-normalization", args.decoder_output_normalization]
+    output_normalization = output_normalization or args.decoder_output_normalization
+    if output_normalization:
+        command += ["--decoder-output-normalization", output_normalization]
     if args.work_dir:
         command += ["--work-dir", str(args.work_dir)]
     return command
@@ -225,11 +227,19 @@ def prepare(exp, manifest, configs, args):
         return {"id": exp["id"], "action": "skip", "reason": f"Unknown feed {exp['fusion']}"}
     asset_id, checked, ckpt, mismatched = resolve_checkpoint(
         exp, manifest, args.assets_root, args.bindings)
-    if not asset_id.startswith("decoder_k23_p"):
-        return {"id": exp["id"], "action": "skip", "reason":
-                f"{asset_id} is an official baseline with no released training config in this repository; "
-                "its original normalization and adapter must be supplied separately."}
-    config = configs.get(float(exp["p_dec"]))
+    output_normalization = None
+    if asset_id.startswith("decoder_official_"):
+        # Official RAEv2 decoders carry their own recorded convention; --decoder-output-normalization
+        # is for the unresolved p_dec=0 lineage and must not leak into them.
+        output_normalization = manifest["assets"][asset_id].get("output_normalization")
+        if output_normalization is None:
+            return {"id": exp["id"], "action": "skip", "reason":
+                    f"{asset_id} records no output normalization in the manifest."}
+        config = OFFICIAL_DECODER_CONFIG
+    elif asset_id.startswith("decoder_k23_p"):
+        config = configs.get(float(exp["p_dec"]))
+    else:
+        return {"id": exp["id"], "action": "skip", "reason": f"Unknown decoder asset {asset_id}"}
     if config is None:
         return {"id": exp["id"], "action": "skip", "reason": f"No decoder config for p_dec={exp['p_dec']}"}
     if mismatched:
@@ -238,7 +248,7 @@ def prepare(exp, manifest, configs, args):
     if ckpt is None and not args.dry_run:
         return {"id": exp["id"], "action": "skip", "reason": f"No local file for {asset_id}",
                 "searched": checked}
-    if exp["p_dec"] == 0 and not args.decoder_output_normalization:
+    if exp["p_dec"] == 0 and not (output_normalization or args.decoder_output_normalization):
         return {"id": exp["id"], "action": "skip", "reason":
                 "The p_dec=0 lineage records no output normalization. Pass "
                 "--decoder-output-normalization explicitly once the original recipe is confirmed; "
@@ -247,7 +257,7 @@ def prepare(exp, manifest, configs, args):
     planned = ckpt or Path(checked[0])
     return {"id": exp["id"], "action": "run", "checkpoint_asset": asset_id,
             "checkpoint_present": ckpt is not None,
-            "command": build_command(exp, planned, config, args)}
+            "command": build_command(exp, planned, config, args, output_normalization)}
 
 
 def group_skips(skipped):

@@ -1,0 +1,14 @@
+# Evaluation-only config for the official RAEv2 DINOv3-L K7/K23 decoders (nyu-visionx/RAEv2-models).
+# The encoder reads all 23 blocks so every readout (k23, k7 via --layers, l11) is available; the fused
+# latent keeps the fixed final-layer surrogate, as for the FuseReg decoders. No training recipe is released.
+combine:
+  target: stage1.combine.MLSCombine
+  params:
+    layers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    weighting: mean
+    p_drop: 0.0
+decoder:
+  config_path: configs/decoder/ViTXL
+  latent_dim: 1024
+data:
+  image_size: 256

@@ -104,7 +104,6 @@ The driver refuses a row rather than substituting a default when:
   and epoch are unconfirmed;
 - `--latent-stats` was not given, because a generator needs the statistics of its own training
   representation and freshly computed ones require protocol verification first;
-- the decoder is an official RAEv2 baseline, which has no released training configuration here;
 - the row is `p_dec=0` and no `--decoder-output-normalization` was given, because that lineage records no
   convention and the choice must not be made to improve agreement.
 
@@ -114,9 +113,17 @@ equivalence or any tolerance: `protocol_verified` stays `false` in the summary i
 
 ## Checkpoint mapping and protocol checks
 
-The inventory contains filename candidates for all eight K23 decoder rates and XL p_dit=.5/.7/.9 epoch40. Base generators, official reconstruction baselines, encoder weights and metric assets were not mapped from that inventory.
+The inventory contains filename candidates for all eight K23 decoder rates and XL p_dit=.5/.7/.9 epoch40. Base generators, encoder weights and metric assets were not mapped from that inventory.
 
 The two no-drop generator epochs are now assigned by the source author: **`raev2_pdit0.0_ep040` is the XL grid baseline and `raev2_pdit0.0_ep080` is the fixed generator for the decoder-swap K23 columns.** That assignment explains why the two tables report different p_dit=0 baselines — 2.91/1.57 for the grid against 3.01/1.25 for the swap — and it replaces the earlier instruction to treat both epochs as interchangeable candidates. The assignment is authorship evidence, not a measured verification: the paper targets and each checkpoint's normalization still need checking.
+
+The Table 1 **official RAEv2 decoders** are `stage1/imagenet/dinov3l-k7/decoder.pt` and `stage1/imagenet/dinov3l-k23/decoder.pt` in `nyu-visionx/RAEv2-models`. The K23 file's SHA-256 equals the hash the paper records for its layer-usage figure; the K7 file is the only ImageNet DINOv3-L K7 decoder RAEv2 publishes. Both are 456-tensor bare state dicts of the same `GeneralDecoder` (ViTXL config) used here, so `eval_reconstruction.py` loads them directly. RAEv2 decodes to `[0, 1]` pixels with no ImageNet de-normalization, so the manifest records `output_normalization: raw` for them and the driver passes it regardless of `--decoder-output-normalization`; they are evaluated with [`configs/stage1/official/raev2-dinov3l-eval.yaml`](../configs/stage1/official/raev2-dinov3l-eval.yaml). Every readout keeps the fixed layer-23 token-mean surrogate, as for the FuseReg decoders; RAEv2's own encoder instead adds the mean of the last *selected* layer, which differs only for the `ℓ11` readout.
+
+```bash
+hf download nyu-visionx/RAEv2-models \
+  --include "stage1/imagenet/dinov3l-k7/decoder.pt" "stage1/imagenet/dinov3l-k23/decoder.pt" \
+  --local-dir checkpoints/raev2-models
+```
 
 The decoder-swap **K7 generator is the official RAEv2 model**: `stage2/imagenet/dinov3l-k7/checkpoint.pt` in `nyu-visionx/RAEv2-models`, the only stage-2 checkpoint that repository publishes. Download it together with its statistics:
 
@@ -170,7 +177,7 @@ python src/eval_reconstruction.py \
 
 Omitting a subset selects all configured layers1–23. `--layers 11` selects actual encoder block11; `--layers 11,13,15,17,19,21,23` selects the sparse k7 readout recorded by the source implementation. Alternatively, `--idx 10,12,14,16,18,20,22` selects those positions in the configured K23 list. Do not pass both flags. The source implementation establishes this sparse readout, but its exact association with every reported k7 baseline still needs verification. The last-layer surrogate remains fixed even for `--layers 11`.
 
-For a formal row, request `--num-images 50000 --metrics psnr ssim rfid` and save a separate output for each feed. Oldnorm decoders predict encoder-normalized pixels, so `--decoder-output-normalization encoder` applies the encoder's inverse pixel normalization. `raw` describes a different training convention and must not be selected to improve the comparison. Official RAEv2 baselines may need their original normalization/adapter; the custom decoder command is not automatically an official-baseline reproduction.
+For a formal row, request `--num-images 50000 --metrics psnr ssim rfid` and save a separate output for each feed. Oldnorm decoders predict encoder-normalized pixels, so `--decoder-output-normalization encoder` applies the encoder's inverse pixel normalization. `raw` describes a different training convention and must not be selected to improve the comparison. Official RAEv2 decoders use `raw`; see [checkpoint mapping](#checkpoint-mapping-and-protocol-checks).
 
 First run a small smoke test to check loading and preprocessing. Then run the selected rows on the full 50k protocol. Prioritize reconstruction at p_dec=0/.9/.95, decoder-swap at p_dec=0/.95, and the unguided XL p_dit=0 baseline and decoder changes. The Base `P0` selection contains the four cells used for the paper's joint-rate comparison.
 

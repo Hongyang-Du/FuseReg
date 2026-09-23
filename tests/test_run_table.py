@@ -57,8 +57,16 @@ class RunTableTest(unittest.TestCase):
         self.assertEqual(plan["action"], "skip")
         self.assertIn("latent_stats_k23", plan["reason"])
 
-    def test_official_baseline_rows_are_refused(self):
-        self.assertEqual(prepared("recon-official-k23-k23")["action"], "skip")
+    def test_official_baseline_rows_use_their_config_and_raw_output(self):
+        """The p_dec=0 flag must not leak into the official decoders, whose convention is recorded."""
+        for normalization in (None, "encoder"):
+            with self.subTest(normalization=normalization):
+                plan = prepared("recon-official-k7-l11", decoder_output_normalization=normalization)
+                self.assertEqual(plan["action"], "run")
+                command = plan["command"]
+                self.assertEqual(command[command.index("--config") + 1], module.rel(module.OFFICIAL_DECODER_CONFIG))
+                self.assertEqual(command[command.index("--decoder-output-normalization") + 1], "raw")
+                self.assertEqual(command[command.index("--layers") + 1], "11")
 
     def test_unresolved_no_drop_normalization_must_be_chosen_explicitly(self):
         self.assertEqual(prepared("recon-p0p0-k23")["action"], "skip")

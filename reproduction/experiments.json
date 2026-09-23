@@ -317,8 +317,23 @@
     "decoder_official_k7": {
       "kind": "checkpoint",
       "description": "Official fixed-fusion RAEv2 K7 decoder; not the reproduced p=0 run",
-      "mapping_status": "unverified",
-      "candidates": []
+      "mapping_status": "assigned_by_source_repository_protocol_pending",
+      "candidates": [
+        {
+          "path": "raev2-models/stage1/imagenet/dinov3l-k7/decoder.pt",
+          "bytes": 1662766063,
+          "sha256": "779871dc7e81d4c31cc5dc80824760c79b40e4a8b90e0d743d1e79c10d515d87",
+          "source": {
+            "repo_id": "nyu-visionx/RAEv2-models",
+            "revision": "9770b7b980fa1875c8e6d65f226c615c0ce908a8",
+            "path": "stage1/imagenet/dinov3l-k7/decoder.pt"
+          },
+          "evidence": "Hub LFS SHA-256 metadata; 456-tensor bare decoder state dict read from the pickle header. The paper records no hash for this decoder, so the association rests on it being the only ImageNet DINOv3-L K7 decoder RAEv2 publishes. Download with --local-dir <assets-root>/raev2-models.",
+          "format": "pt"
+        }
+      ],
+      "output_normalization": "raw",
+      "output_normalization_evidence": "RAEv2 RAE.decode returns decoder.unpatchify(logits) and its reconstruction evaluator clamps that to [0, 1] with no ImageNet de-normalization (nanovisionx/RAEv2 src/stage1/rae.py, src/eval/reconstruction.py)."
     },
     "generator_swap_k7": {
       "kind": "checkpoint",
@@ -371,13 +386,28 @@
     "decoder_official_k23": {
       "kind": "checkpoint",
       "description": "Official fixed-fusion RAEv2 K23 decoder; not the reproduced p=0 run",
-      "mapping_status": "unverified",
-      "candidates": [],
+      "mapping_status": "assigned_by_hash",
+      "candidates": [
+        {
+          "path": "raev2-models/stage1/imagenet/dinov3l-k23/decoder.pt",
+          "bytes": 1662766063,
+          "sha256": "0b6d2c006a672fb995af7ca3c380e587435bee458584ba27d4846a1474c51273",
+          "source": {
+            "repo_id": "nyu-visionx/RAEv2-models",
+            "revision": "9770b7b980fa1875c8e6d65f226c615c0ce908a8",
+            "path": "stage1/imagenet/dinov3l-k23/decoder.pt"
+          },
+          "evidence": "Hub LFS SHA-256 equals paper_provenance.sha256; 456-tensor bare decoder state dict read from the pickle header. Download with --local-dir <assets-root>/raev2-models.",
+          "format": "pt"
+        }
+      ],
       "paper_provenance": {
         "scope": "10k layer-usage figure",
         "sha256": "0b6d2c006a672fb995af7ca3c380e587435bee458584ba27d4846a1474c51273",
         "bytes": 1662766063
-      }
+      },
+      "output_normalization": "raw",
+      "output_normalization_evidence": "RAEv2 RAE.decode returns decoder.unpatchify(logits) and its reconstruction evaluator clamps that to [0, 1] with no ImageNet de-normalization (nanovisionx/RAEv2 src/stage1/rae.py, src/eval/reconstruction.py)."
     },
     "generator_swap_k23": {
       "kind": "checkpoint",
