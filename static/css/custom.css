@@ -1,0 +1,476 @@
+/* Custom styles for iREPA project page */
+/* Layout provided by ../../../static/css/paper-layout.css */
+
+/* Override distill grid - use paper-layout content width */
+d-article {
+    display: block !important;
+    max-width: var(--layout-content-width, 720px);
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+d-article > * {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Jump to Sections - Icon Row (Cambrian style) */
+.icon-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+    padding: 20px;
+    line-height: 1rem;
+}
+
+.icon-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    color: #444;
+    padding: 15px;
+    margin: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fff;
+    flex: 1 1 150px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.icon-link:hover {
+    background-color: #f8f8f8;
+    border-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.icon-link .icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 10px;
+}
+
+@media (max-width: 600px) {
+    .icon-link {
+        flex: 1 1 45%;
+    }
+}
+
+/* Click Hint */
+.click-hint {
+    display: block;
+    margin: 20px auto;
+    width: 85%;
+    font-size: 15px;
+    color: #333333;
+    border: 2px solid #cccccc;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.click-hint strong {
+    color: #2563eb;
+}
+
+.click-hint img {
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+/* Header Icon Container (like Cambrian) */
+.header-content .icon-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.header-content .icon-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.header-content .icon-item img {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.header-content .icon-item > div {
+    flex: 1;
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+
+.header-content .icon-item strong {
+    font-weight: 600;
+    color: #2563eb;
+}
+
+.header-content p {
+    margin: 15px 0;
+    font-size: 1.2rem;
+    line-height: 1.6;
+}
+
+/* Responsive design for header icons */
+@media (max-width: 768px) {
+    .header-content .icon-container {
+        gap: 10px;
+    }
+
+    .header-content .icon-item img {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+/* Teaser Figure - consistent width with text */
+#fig-teaser {
+    width: 100%;
+    margin: 1.5em 0;
+}
+
+#fig-teaser figure {
+    width: 100%;
+    margin: 0;
+}
+
+#fig-teaser img {
+    display: block;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
+}
+
+#fig-teaser figcaption {
+    margin-top: 20px;
+    font-size: 0.95em;
+    line-height: 1.6;
+    color: #666;
+}
+
+/* Key Takeaways Section */
+.key-takeaways-block {
+    padding: 40px 0;
+    background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
+    margin: 0 -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.takeaway-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.takeaway-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 25px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.takeaway-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.takeaway-number {
+    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.takeaway-content {
+    flex: 1;
+}
+
+.takeaway-content h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.3em;
+    color: #333;
+}
+
+.takeaway-content p {
+    margin: 0;
+    color: #666;
+    line-height: 1.6;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .takeaway-item {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .takeaway-number {
+        margin: 0 auto;
+    }
+}
+
+/* Section styling */
+.motivation-block,
+.spatial-structure-block,
+.method-block,
+.results-block {
+    margin-top: 40px;
+    margin-bottom: 40px;
+}
+
+/* Figure captions */
+d-figure figcaption {
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #666;
+    line-height: 1.5;
+}
+
+/* Ordered and unordered lists in content */
+.text ol,
+.text ul {
+    margin-left: 20px;
+    line-height: 1.8;
+}
+
+.text li {
+    margin-bottom: 10px;
+}
+
+/* Abstract styling */
+.abstract {
+    font-size: 1.05em;
+    line-height: 1.8;
+    color: #444;
+}
+
+/* BibTeX styling */
+.bibtex {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 5px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    overflow-x: auto;
+}
+
+/* ============================================
+   SIDENOTES - Uses paper-layout.css variables
+   ============================================ */
+
+html {
+    overflow-x: hidden;
+}
+
+/* Mobile/tablet: sidenotes inline with subtle styling */
+.sidenote {
+    display: block;
+    font-size: 0.9em;
+    line-height: 1.5;
+    color: var(--text-muted, #666);
+    margin: 16px 0;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border-left: 3px solid #94a3b8;
+    font-style: normal !important;
+    border-radius: 0 4px 4px 0;
+    font-family: inherit; /* Use same serif font as body */
+}
+
+/* Desktop: sidenotes in right margin, pushed far right */
+@media (min-width: 1200px) {
+    d-article {
+        overflow: visible !important;
+    }
+
+    .sidenote-container {
+        position: relative;
+    }
+
+    .sidenote {
+        position: absolute;
+        right: calc(-1 * (var(--layout-sidenote-width, 220px) + var(--layout-side-gap, 256px)));
+        top: 0;
+        width: var(--layout-sidenote-width, 220px);
+        margin: 0;
+        padding: 0 0 0 16px;
+        background: none;
+        border-left: 1px solid var(--border-light, #e5e5e5);
+        border-radius: 0;
+        color: var(--text-muted, #666);
+        font-size: 0.9em;
+        line-height: 1.5;
+        font-family: inherit;
+        font-style: normal !important;
+    }
+}
+
+/* ============================================
+   STICKY TABLE OF CONTENTS
+   ============================================ */
+
+.toc-container {
+    display: none;
+}
+
+@media (min-width: 1200px) {
+    .toc-container {
+        display: block;
+        position: fixed;
+        left: calc(50% - var(--layout-content-width, 720px)/2 - var(--layout-toc-width, 180px) - var(--layout-side-gap, 256px));
+        top: 120px;
+        width: var(--layout-toc-width, 180px);
+        font-size: 0.85em;
+        line-height: 1.5;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 100;
+    }
+
+    .toc-container.visible {
+        opacity: 1;
+    }
+
+    .toc-container h4 {
+        font-size: 0.75em;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted, #666);
+        margin: 0 0 12px 0;
+    }
+
+    .toc-container ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .toc-container li {
+        margin-bottom: 8px;
+    }
+
+    .toc-container a {
+        color: var(--text-muted, #666);
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .toc-container a:hover {
+        color: var(--accent, #2563eb);
+    }
+
+    .toc-container a.active {
+        color: var(--accent, #2563eb);
+        font-weight: 500;
+    }
+}
+
+/* ============================================
+   TABLE STYLES (from iREPA)
+   ============================================ */
+
+.table-container {
+    overflow: auto;
+    overflow-y: hidden;
+    max-width: 90vw;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+}
+
+.data-table {
+    border-collapse: separate;
+    border-spacing: 2.5px;
+    margin: 0 auto;
+    font-size: 12px;
+    min-width: 100%;
+    width: 100%;
+    line-height: 1.25;
+}
+
+.data-table td {
+    font-feature-settings: 'tnum';
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.data-table td, .data-table th {
+    padding: 0.25em 0.25em;
+}
+
+.data-table th:first-child, .data-table td:first-child {
+    text-align: left;
+    font-weight: bold;
+}
+
+.tb-hdr {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    text-align: center !important;
+}
+
+.highlight {
+    background-color: #e6ffe6;
+    font-weight: bold;
+}
+
+.highlight-green {
+    background-color: #e6ffe6;
+}
+
+.highlight-orange {
+    background-color: #fff2e6;
+}
+
+.highlight-gray td {
+    background-color: #f2f2f2;
+    text-align: left !important;
+}
+
+.highlight-blue {
+    background-color: #e6f2ff;
+}
+
+caption {
+    padding: 10px;
+    caption-side: bottom;
+    font-weight: 500;
+}
+
+/* Mobile-specific table styles */
+@media screen and (max-width: 600px) {
+    .data-table {
+        font-size: 0.8em;
+    }
+
+    .data-table td, .data-table th {
+        padding: 0.2em 0.4em;
+        font-size: 0.8em;
+    }
+}

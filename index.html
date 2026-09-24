@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Regularizing Layer Fusion in Representation Autoencoders</title>
+
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="canonical" href="https://hongyang-du.github.io/FuseReg/">
+        <meta name="robots" content="index, follow">
+
+        <meta name="citation_title" content="Regularizing Layer Fusion Mitigates the Reconstruction-Generation Gap in Representation Autoencoders">
+        <meta name="citation_author" content="Du, Hongyang">
+        <meta name="citation_author" content="Xie, Yunfei">
+        <meta name="citation_author" content="Ye, Junjie">
+        <meta name="citation_author" content="Yang, Jiawei">
+        <meta name="citation_author" content="Cong, Xiaoyan">
+        <meta name="citation_author" content="Zhang, Haodong">
+        <meta name="citation_author" content="Huang, Yongchao">
+        <meta name="citation_author" content="Wu, Haiyu">
+        <meta name="citation_author" content="Li, Zongxia">
+        <meta name="citation_author" content="Gui, Shihang">
+        <meta name="citation_author" content="Liu, Dawei">
+        <meta name="citation_author" content="Li, Runhao">
+        <meta name="citation_author" content="Ni, Jingcheng">
+        <meta name="citation_author" content="Wei, Chen">
+        <meta name="citation_author" content="Balestriero, Randall">
+        <meta name="citation_author" content="Wang, Yue">
+        <meta name="citation_publication_date" content="2026">
+        <meta name="citation_language" content="en">
+        <meta name="citation_abstract" content="FuseReg replaces heuristic layer selection in representation autoencoders with training over random subsets of encoder layers, regularizing sensitivity to cross-layer disagreement in both the decoder and the diffusion transformer.">
+
+        <meta property="og:url" content="https://hongyang-du.github.io/FuseReg/" />
+        <meta property="og:title" content="Regularizing Layer Fusion in Representation Autoencoders" />
+        <meta property="og:description" content="One decoder for every layer fusion, and a better decoder-generator interface for representation autoencoders." />
+        <meta property="og:image" content="https://hongyang-du.github.io/FuseReg/assets/images/cosine-similarity.png" />
+        <meta property="og:type" content="article" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Regularizing Layer Fusion in Representation Autoencoders" />
+        <meta name="twitter:description" content="One decoder for every layer fusion, and a better decoder-generator interface for representation autoencoders." />
+        <meta name="twitter:image" content="https://hongyang-du.github.io/FuseReg/assets/images/cosine-similarity.png" />
+
+        <script src="./static/js/distill_template.v2.js"></script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+
+        <link rel="stylesheet" href="./static/css/paper-layout.css">
+        <link rel="stylesheet" href="./static/css/style.css">
+        <link rel="stylesheet" href="./static/css/custom.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+        <link rel="stylesheet" href="./static/css/site.css">
+
+        <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+        <script defer src="./static/js/medium-zoom.min.js"></script>
+        <script defer src="./static/js/zoom.js"></script>
+    </head>
+
+    <body>
+        <nav class="toc-container">
+            <h4>Contents</h4>
+            <ul>
+                <li><a href="#overview">1. Overview</a></li>
+                <li><a href="#method">2. Method</a></li>
+                <li>
+                    <a href="#results">3. Results</a>
+                    <ul>
+                        <li><a href="#results-reconstruction">3.1 Reconstruction</a></li>
+                        <li><a href="#results-swap">3.2 Decoder Swap</a></li>
+                        <li><a href="#results-joint">3.3 Joint Regularization</a></li>
+                    </ul>
+                </li>
+                <li><a href="#analysis">4. Analysis</a></li>
+                <li><a href="#conclusion">5. Conclusion</a></li>
+            </ul>
+        </nav>
+
+        <nav style="background-color: #fff; border-bottom: 1px solid #e5e5e5; padding: 12px 0;">
+            <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #1a1a1a; font-size: 15px; font-weight: 500;">FuseReg</span>
+                <div style="display: flex; gap: 20px;">
+                    <a href="https://rae-dit.github.io/" target="_blank" style="color: #666; text-decoration: none; font-size: 14px;">RAE</a>
+                    <a href="https://raev2.github.io/" target="_blank" style="color: #666; text-decoration: none; font-size: 14px;">RAEv2</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="header-wrapper">
+            <div class="central-header">
+                <div class="title-section">
+                    <h1>Regularizing Layer Fusion Mitigates the Reconstruction&ndash;Generation Gap in Representation Autoencoders</h1>
+                </div>
+
+                <div class="authors">
+                    <a href="https://hongyang-du.github.io/" target="_blank">Hongyang Du</a><sup>1,2</sup> &emsp;
+                    <a href="https://yunfeixie233.github.io/" target="_blank">Yunfei Xie</a><sup>3</sup> &emsp;
+                    <a href="https://junjieye.com/" target="_blank">Junjie Ye</a><sup>1</sup> &emsp;
+                    <a href="https://jiawei-yang.github.io/" target="_blank">Jiawei Yang</a><sup>1</sup> &emsp;
+                    <a href="https://oliver-cong02.github.io/" target="_blank">Xiaoyan Cong</a><sup>2</sup> &emsp;
+                    <a href="https://cs.brown.edu/people/grad/hzhan351/" target="_blank">Haodong Zhang</a><sup>2</sup>
+                    <br>
+                    <a href="https://www.abdn.ac.uk/people/yongchao.huang" target="_blank">Yongchao Huang</a><sup>4</sup> &emsp;
+                    <a href="https://haiyuwu.github.io/" target="_blank">Haiyu Wu</a><sup>5</sup> &emsp;
+                    <a href="https://zli12321.github.io/" target="_blank">Zongxia Li</a><sup>6</sup> &emsp;
+                    <a href="https://www.linkedin.com/in/shihang-gui-06917727b/" target="_blank">Shihang Gui</a><sup>2</sup> &emsp;
+                    <a href="https://davidliuk.github.io/" target="_blank">Dawei Liu</a><sup>7</sup> &emsp;
+                    <a href="https://www.linkedin.com/in/runhao-li-lee021004/" target="_blank">Runhao Li</a><sup>1</sup>
+                    <br>
+                    <a href="https://jingchengni.com/" target="_blank">Jingcheng Ni</a><sup>2</sup> &emsp;
+                    <a href="https://weichen582.github.io/" target="_blank">Chen Wei</a><sup>3,†</sup> &emsp;
+                    <a href="https://randallbalestriero.github.io/" target="_blank">Randall Balestriero</a><sup>2,†</sup> &emsp;
+                    <a href="https://yuewang.xyz/" target="_blank">Yue Wang</a><sup>1,†</sup>
+                    <div class="affiliations">
+                        <sup>1</sup>USC PSI Lab &emsp; <sup>2</sup>Brown University &emsp; <sup>3</sup>Rice University &emsp; <sup>4</sup>University of Aberdeen<br>
+                        <sup>5</sup>University of Notre Dame &emsp; <sup>6</sup>University of Maryland, College Park &emsp; <sup>7</sup>University of Pennsylvania
+                    </div>
+                    <div class="author-note"><sup>&dagger;</sup>Equal advising &emsp; Corresponding to <a href="mailto:hongyang_du@brown.edu">hongyang_du@brown.edu</a></div>
+                </div>
+
+                <div class="tldr-section">
+                    <p><span class="tldr-label">TL;DR:</span> Instead of committing a representation autoencoder to one hand-picked layer fusion, train the decoder and the diffusion transformer on <strong>random subsets of encoder layers</strong>. One decoder then works for any fusion, and swapping it in improves generation with no architecture change and no extra inference cost.</p>
+                </div>
+
+                <div class="button-row">
+                    <a href="#" class="button paper-link" target="_blank">
+                        <span class="icon is-small"><i class="ai ai-arxiv"></i></span> arXiv
+                    </a>
+                    <a href="https://github.com/Hongyang-Du/FuseReg" class="button" target="_blank">
+                        <span class="icon is-small"><i class="fab fa-github"></i></span> Code
+                    </a>
+                    <a href="https://huggingface.co/Hongyang-Du/FuseReg" class="button" target="_blank">
+                        <span class="icon is-small"><img src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" alt="HF" style="height: 1em;"></span> Models
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    <d-article>
+        <div class="key-findings">
+            <h4 class="key-findings-title">Key Findings</h4>
+            <div class="key-finding">
+                <span class="key-finding-number">1</span>
+                <p class="key-finding-text"><strong>Layer fusion is a training distribution, not a hyperparameter.</strong> Averaging a random non-empty subset of encoder layers per sample places every fusion in the training support, instead of committing the decoder and generator to one fixed aggregate.</p>
+            </div>
+            <div class="key-finding">
+                <span class="key-finding-number">2</span>
+                <p class="key-finding-text"><strong>One decoder serves every readout.</strong> A single FuseReg decoder matches or outperforms decoders trained for a specific fusion, on the full <em>k</em>&nbsp;=&nbsp;23 aggregate, the last <em>k</em>&nbsp;=&nbsp;7 layers, and a single layer &#8467;<sub>11</sub>.</p>
+            </div>
+            <div class="key-finding">
+                <span class="key-finding-number">3</span>
+                <p class="key-finding-text"><strong>Two stages, two rates.</strong> Reconstruction and generation prefer different amounts of regularization, so the decoder and the DiT get separate rates. Regularizing both gives the best generation: 13.96 &rarr; 9.93 gFID on DiT-Base.</p>
+            </div>
+        </div>
+
+        <hr>
+
+        <div id="overview" class="overview-block">
+            <h1 class="text">1. Overview</h1>
+
+            <p class="text">
+                Representation autoencoders (<a href="https://rae-dit.github.io/" target="_blank">RAE</a><sup><a href="#ref-rae">[1]</a></sup>, <a href="https://raev2.github.io/" target="_blank">RAEv2</a><sup><a href="#ref-raev2">[2]</a></sup>) replace the VAE with a frozen vision encoder, and fuse several encoder layers into one latent. That latent has two jobs at once: shallow layers preserve pixel detail for reconstruction, while deeper layers are easier for the generator to model. Picking one fusion hard-codes the trade-off into both stages.
+            </p>
+
+            <p class="text">
+                <strong>FuseReg</strong> turns the choice into a training distribution. Each training sample averages a random non-empty subset of encoder layers. The decoder learns to reconstruct from changing layer compositions, and the diffusion transformer learns from noisy subset representations while targeting the full-layer fusion. At inference the full-layer mean is used, so nothing about the architecture or the sampling cost changes.
+            </p>
+
+            <d-figure id="fig-teaser">
+                <figure>
+                    <img data-zoomable="" draggable="false" src="assets/images/cosine-similarity.png" alt="Cosine-similarity maps of decoder intermediate-block features for FuseReg and RAEv2 under three layer fusions" style="width: 100%;">
+                    <figcaption><strong>One decoder, every fusion.</strong> Patch-wise cosine similarity at a decoder intermediate block for three query patches (stars). FuseReg (top) keeps stable spatial structure under <em>k</em> = 23, <em>k</em> = 7 and the single layer &#8467;<sub>11</sub>; RAEv2 (bottom) degrades away from its training fusion.</figcaption>
+                </figure>
+            </d-figure>
+        </div>
+
+        <hr>
+
+        <div id="method" class="results-block">
+            <h1 class="text">2. Method</h1>
+
+            <p class="text">
+                For each training sample we draw a random mask over the <em>K</em> encoder layers, keep at least one layer, and average the layers that survive. Averaging by the number of retained layers leaves the latent unchanged in expectation, so the randomization varies only the directions along which encoder layers disagree &mdash; which is exactly what a decoder tied to one fusion is brittle to.
+            </p>
+
+            <p class="text">
+                The same idea applies to the generator: the DiT sees noisy subset representations and predicts the full-layer target. Because reconstruction and generation are different prediction problems, the two stages use separate rates, <em>p</em><sub>dec</sub> and <em>p</em><sub>dit</sub>.
+            </p>
+
+            <div class="finding-box">
+                <ul>
+                    <li><strong>No cost at inference.</strong> FuseReg changes only what the decoder and DiT see during training. The architecture, the latent size and the sampler are unchanged.</li>
+                </ul>
+            </div>
+        </div>
+
+        <hr>
+
+        <div id="results" class="results-block">
+            <h1 class="text">3. Results</h1>
+            <p class="text">ImageNet-256 with a frozen DINOv3-L encoder; 50k images for reconstruction and 50k samples with 50 Euler steps for generation.</p>
+
+            <div id="results-reconstruction" style="margin-top: 1.5em;">
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.1 One decoder for every fusion</h2>
+
+            <d-figure id="fig-recon-table">
+                <figure>
+                    <img data-zoomable="" draggable="false" src="assets/images/reconstruction-table.png" alt="Table: PSNR, SSIM and rFID for RAEv2 K=7, RAEv2 K=23 and FuseReg p=.95 decoders under fusion k=7, k=23 and single layer l11" style="width: 100%;">
+                    <figcaption><strong>One FuseReg decoder matches or outperforms any deterministic fusion.</strong> Blue cells mark the fusion each decoder was trained on.</figcaption>
+                </figure>
+            </d-figure>
+
+            <d-figure id="fig-recon">
+                <figure style="max-width: 78%; margin: 0 auto;">
+                    <img data-zoomable="" draggable="false" src="assets/images/reconstruction-readouts.png" alt="Reconstructions from the last seven layers and from layer 11 for RAEv2 and FuseReg decoders" style="width: 100%;">
+                    <figcaption><strong>Reconstruction off the training fusion.</strong> Fixed-fusion RAEv2 decoders break down away from their training aggregate; FuseReg does not. Insets show PSNR in dB.</figcaption>
+                </figure>
+            </d-figure>
+            </div>
+
+            <div id="results-swap" style="margin-top: 1.5em;">
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.2 A better decoder improves generation</h2>
+
+                <p class="text">
+                    Keeping the generator fixed and swapping only the decoder isolates the decoder's contribution: within each setting, every decoder renders the same 50k sampled latents.
+                </p>
+
+            <d-figure id="fig-swap">
+                <figure>
+                    <img data-zoomable="" draggable="false" src="assets/images/decoder-swap.png" alt="gFID and Inception Score across decoder layer-drop rates for k=23 and k=7 readouts, with and without guidance" style="width: 100%;">
+                    <figcaption><strong>Same generator, same latents.</strong> Swapping in a regularized decoder alone lowers gFID from <strong>3.01 &rarr; 2.21</strong> at <em>k</em> = 23 and from <strong>27.73 &rarr; 1.92</strong> at <em>k</em> = 7.</figcaption>
+                </figure>
+            </d-figure>
+            </div>
+
+            <div id="results-joint" style="margin-top: 1.5em;">
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.3 Regularizing both stages</h2>
+
+            <d-figure id="fig-joint">
+                <figure>
+                    <img data-zoomable="" draggable="false" src="assets/images/joint-regularization-table.png" alt="Table: gFID and IS grids over generator rate p_dit and decoder rate p_dec for DiT-Base and DiT-XL" style="width: 100%;">
+                    <figcaption><strong>Two stages, two scales.</strong> Unguided ImageNet-256, 40 epochs. Rows: <em>p</em><sub>dit</sub>; columns: <em>p</em><sub>dec</sub>; the green box is the fixed-fusion baseline. Best gFID: <strong>9.93</strong> on DiT-Base and <strong>2.38</strong> on DiT-XL.</figcaption>
+                </figure>
+            </d-figure>
+
+                <div class="finding-box">
+                    <ul>
+                        <li><strong>The two rates must be chosen separately.</strong> DiT-Base prefers regularizing both stages, while DiT-XL prefers a strongly regularized decoder with an unregularized generator.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
+        <div id="analysis" class="results-block">
+            <h1 class="text">4. Analysis</h1>
+
+            <p class="text">
+                The encoder is frozen throughout, so the gains come from how the decoder reads a fixed representation, not from better features. FuseReg reconstructs well from individual layers and small subsets, which is why improving the readout of a fixed representation also improves generation.
+            </p>
+
+            <d-figure id="fig-layer-usage">
+                <figure>
+                    <img data-zoomable="" draggable="false" src="assets/images/layer-reliance.png" alt="Leave-one-layer-out PSNR drop and single-layer PSNR for RAEv2 and FuseReg" style="width: 100%;">
+                    <figcaption><strong>Reconstruction spread across depths.</strong> FuseReg has a flatter leave-one-layer-out profile (left) and stronger single-layer readouts (right), on 10,000 held-out images.</figcaption>
+                </figure>
+            </d-figure>
+
+
+        </div>
+
+        <hr>
+
+        <div id="conclusion" class="conclusion-block">
+            <h1 class="text">5. Conclusion</h1>
+
+            <p class="text">
+                Layer fusion in a representation autoencoder does not have to be decided once and baked into the decoder and the generator. Training over random layer subsets gives one decoder that works across fusions, and gives the generator a latent interface it models more easily. The result is better generation at no additional inference cost, with the encoder left untouched.
+            </p>
+        </div>
+
+    </d-article>
+
+    <d-appendix>
+        <h3 id="bibtex">BibTeX</h3>
+        <div class="bibtex-container" style="position: relative;">
+            <pre class="bibtex" id="bibtex-content" style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 0.9em; line-height: 1.6; overflow-x: auto;">@misc{du2026fusereg,
+  title   = {Regularizing Layer Fusion Mitigates the Reconstruction-Generation Gap in Representation Autoencoders},
+  author  = {Du, Hongyang and Xie, Yunfei and Ye, Junjie and Yang, Jiawei and Cong, Xiaoyan
+             and Zhang, Haodong and Huang, Yongchao and Wu, Haiyu and Li, Zongxia
+             and Gui, Shihang and Liu, Dawei and Li, Runhao and Ni, Jingcheng
+             and Wei, Chen and Balestriero, Randall and Wang, Yue},
+  year    = {2026},
+  url     = {https://hongyang-du.github.io/FuseReg/},
+}</pre>
+        </div>
+
+        <h3 id="references">References</h3>
+        <ol class="references-list" style="font-size: 0.9em; line-height: 1.55; color: #444; padding-left: 1.5em;">
+            <li id="ref-rae">Zheng, B., Ma, N., Tong, S., &amp; Xie, S. (2025). Diffusion Transformers with Representation Autoencoders. <em><a href="https://arxiv.org/abs/2510.11690" target="_blank">arXiv:2510.11690</a></em>.</li>
+            <li id="ref-raev2">Singh, J., Zheng, B., Wu, Z., Zhang, R., Shechtman, E., &amp; Xie, S. (2026). Improved Baselines with Representation Autoencoders. <em><a href="https://arxiv.org/abs/2605.18324" target="_blank">arXiv:2605.18324</a></em>.</li>
+            <li id="ref-dinov3">Sim&eacute;oni, O., et al. (2025). DINOv3. <em><a href="https://arxiv.org/abs/2508.10104" target="_blank">arXiv:2508.10104</a></em>.</li>
+        </ol>
+    </d-appendix>
+    </body>
+</html>
