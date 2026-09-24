@@ -1,6 +1,6 @@
 <div align="center">
 
-# FuseReg: Regularizing Layer Fusion Mitigates the Reconstruction–Generation Gap in Representation Autoencoders
+# Regularizing Layer Fusion Mitigates the Reconstruction–Generation Gap in Representation Autoencoders
 
 <p>
   <a href="https://hongyang-du.github.io/">Hongyang Du</a><sup>1,2</sup> &nbsp;&nbsp; <a href="https://yunfeixie233.github.io/">Yunfei Xie</a><sup>3</sup> &nbsp;&nbsp; <a href="https://junjieye.com/">Junjie Ye</a><sup>1</sup> &nbsp;&nbsp; <a href="https://jiawei-yang.github.io/">Jiawei Yang</a><sup>1</sup> &nbsp;&nbsp; <a href="https://oliver-cong02.github.io/">Xiaoyan Cong</a><sup>2</sup> &nbsp;&nbsp; <a href="https://cs.brown.edu/people/grad/hzhan351/">Haodong Zhang</a><sup>2</sup><br>
@@ -240,7 +240,7 @@ Provisional project citation; replace it with the stable venue/arXiv entry when 
 
 ```bibtex
 @misc{du2026fusereg,
-  title  = {FuseReg: Regularizing Layer Fusion Mitigates the Reconstruction-Generation Gap in Representation Autoencoders},
+  title  = {Regularizing Layer Fusion Mitigates the Reconstruction-Generation Gap in Representation Autoencoders},
   author = {Du, Hongyang and Xie, Yunfei and Ye, Junjie and Yang, Jiawei and Cong, Xiaoyan
             and Zhang, Haodong and Huang, Yongchao and Wu, Haiyu and Li, Zongxia
             and Gui, Shihang and Liu, Dawei and Li, Runhao and Ni, Jingcheng
