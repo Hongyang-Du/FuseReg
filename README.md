@@ -36,9 +36,6 @@ Representation autoencoders such as RAEv2 ask one fused latent to serve two diff
 
 Averaging over the retained layers keeps the deployment latent unchanged in expectation, so randomization varies only the directions along which encoder layers disagree. The two stages use separate rates, `p_dec` and `p_dit`.
 
-> [!IMPORTANT]
-> **Paper formulation vs. released implementation:** the manuscript conditions Bernoulli masks on retaining at least one layer. The checkpoint-compatible source instead repairs an all-dropped draw by retaining one uniformly selected layer. Both support every non-empty subset, but they assign different probabilities; at `K=23, p=.95`, about 30.7% of raw draws are empty before repair. Preserve the released behavior for checkpoint-compatible execution, and do not describe a retraining run as distribution-identical to the manuscript without resolving this difference.
-
 ## Results
 
 ### One regularizer, two stages, two scales
