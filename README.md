@@ -26,11 +26,11 @@
   <img src="assets/figures/cosine-similarity.png" width="100%" alt="Cosine-similarity maps of decoder intermediate-block features for FuseReg (top) and RAEv2 (bottom), fed K=23, K=7 and single-layer l11 fusions, with reconstructions.">
 </p>
 
-**One decoder, every fusion.** FuseReg (top) keeps stable spatial structure under *K*=23, *K*=7 and the single layer ℓ<sub>11</sub>; the fixed-fusion RAEv2 decoder (bottom) degrades away from its training fusion.
+**One decoder, three fusions.** Cosine-similarity maps at a decoder intermediate block, with reconstructions. FuseReg (top) keeps stable spatial structure under *k*=23, *k*=7 and the single layer ℓ<sub>11</sub>; the fixed-fusion RAEv2 *K*=23 decoder (bottom) degrades away from its training fusion.
 
 ## Overview
 
-Representation autoencoders ask one fused latent to serve two different goals: shallow encoder features preserve pixel detail, while deeper features tend to be easier to model generatively. A fixed layer fusion hard-codes this trade-off into both the decoder and the generator.
+Representation autoencoders such as RAEv2 ask one fused latent to serve two different goals: shallow encoder features preserve pixel detail, while deeper features tend to be easier to model generatively. A fixed layer fusion hard-codes this trade-off into both the decoder and the generator.
 
 **FuseReg turns layer fusion from a fixed heuristic into a training distribution.** Each training sample averages a random non-empty subset of encoder layers; the released latent also retains a fixed final-layer token-mean surrogate. The decoder learns to reconstruct from changing layer compositions, and the diffusion transformer learns from noisy subset representations while targeting the full-layer fusion. Inference uses the full-layer mean by default, with **no architecture change or additional inference cost**.
 
@@ -63,7 +63,7 @@ Averaging over the retained layers keeps the deployment latent unchanged in expe
   <img src="assets/figures/reconstruction-readouts.png" width="100%" alt="Paper reconstruction comparison: the same FuseReg decoder and fixed-fusion RAEv2 decoders reconstruct four images from last-seven-layer and single-layer L11 readouts. Insets show PSNR in dB.">
 </p>
 
-**Reconstruction off the training fusion.** Fixed-fusion RAEv2 decoders break down; FuseReg does not. Insets show PSNR in dB.
+**Reconstruction off the training fusion.** Fixed-fusion RAEv2 decoders degrade away from the fusion they were trained on; the same FuseReg decoder has the highest PSNR on every image under both readouts. Insets show PSNR in dB.
 
 ## Discussion
 
@@ -73,9 +73,9 @@ Averaging over the retained layers keeps the deployment latent unchanged in expe
   <img src="assets/figures/layer-usage.png" width="100%" alt="Paper figure: leave-one-layer-out PSNR drop (left) and single-layer PSNR (right) for the RAEv2 decoder and FuseReg with p_dec=0.95, frozen DINOv3 K=23.">
 </p>
 
-**Distributed reconstruction.** FuseReg has a flatter leave-one-layer-out profile (left) and stronger single-layer readouts (right), on 10,000 held-out ImageNet-256 images.
+**Distributed reconstruction.** Left: PSNR drop when one layer is left out of the full fusion; FuseReg's profile is much flatter. Right: PSNR from one layer plus the final-layer token-mean surrogate; FuseReg is higher at every layer. 10,000 held-out ImageNet-256 images.
 
-Because the encoder is frozen, this reflects the decoder's ability to recover information already available across depths: improving the readout of a fixed representation can improve generation even when the generator and sampled latents are unchanged.
+Because the encoder is frozen, this reflects the decoder's ability to recover information already available across depths: improving the readout of a fixed representation can improve unguided generation even when the generator and sampled latents are unchanged.
 
 ## 1. Environment setup
 
