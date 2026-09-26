@@ -32,12 +32,12 @@
 
         <meta property="og:url" content="https://hongyang-du.github.io/FuseReg/" />
         <meta property="og:title" content="Regularizing Layer Fusion in Representation Autoencoders" />
-        <meta property="og:description" content="One decoder for every layer fusion, and a better decoder-generator interface for representation autoencoders." />
+        <meta property="og:description" content="Training the decoder and diffusion transformer of a representation autoencoder on random subsets of encoder layers." />
         <meta property="og:image" content="https://hongyang-du.github.io/FuseReg/assets/images/cosine-similarity.png" />
         <meta property="og:type" content="article" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Regularizing Layer Fusion in Representation Autoencoders" />
-        <meta name="twitter:description" content="One decoder for every layer fusion, and a better decoder-generator interface for representation autoencoders." />
+        <meta name="twitter:description" content="Training the decoder and diffusion transformer of a representation autoencoder on random subsets of encoder layers." />
         <meta name="twitter:image" content="https://hongyang-du.github.io/FuseReg/assets/images/cosine-similarity.png" />
 
         <script src="./static/js/distill_template.v2.js"></script>
@@ -120,7 +120,7 @@
                 </div>
 
                 <div class="tldr-section">
-                    <p><span class="tldr-label">TL;DR:</span> Instead of committing a representation autoencoder to one hand-picked layer fusion, train the decoder and the diffusion transformer on <strong>random subsets of encoder layers</strong>. One decoder then reconstructs well from any fusion, and swapping it into a fixed generator lowers unguided gFID, with no architecture change and no extra inference cost.</p>
+                    <p><span class="tldr-label">TL;DR:</span> Instead of committing a representation autoencoder to one hand-picked layer fusion, train the decoder and the diffusion transformer on <strong>random subsets of encoder layers</strong>. One decoder then reconstructs well from different fusions, and swapping it into a fixed generator lowers unguided gFID, with no architecture change and no extra inference cost.</p>
                 </div>
 
                 <div class="button-row">
@@ -142,11 +142,11 @@
             <h4 class="key-findings-title">Key Findings</h4>
             <div class="key-finding">
                 <span class="key-finding-number">1</span>
-                <p class="key-finding-text"><strong>Layer fusion is a training distribution, not a hyperparameter.</strong> Averaging a random non-empty subset of encoder layers per sample places every fusion in the training support, instead of committing the decoder and generator to one fixed aggregate.</p>
+                <p class="key-finding-text"><strong>Treat layer fusion as a training distribution, not a fixed choice.</strong> Averaging a random non-empty subset of encoder layers per sample puts every subset-mean fusion in the training support, instead of committing the decoder and generator to one fixed aggregate.</p>
             </div>
             <div class="key-finding">
                 <span class="key-finding-number">2</span>
-                <p class="key-finding-text"><strong>One decoder serves every readout.</strong> A single FuseReg decoder reaches higher PSNR and SSIM than fixed-fusion decoders on the full <em>k</em>&nbsp;=&nbsp;23 aggregate, the last <em>k</em>&nbsp;=&nbsp;7 layers, and a single layer &#8467;<sub>11</sub>, including the fusion each baseline was trained on.</p>
+                <p class="key-finding-text"><strong>One decoder serves different readouts.</strong> A single FuseReg decoder reaches higher PSNR and SSIM than fixed-fusion decoders on the full <em>k</em>&nbsp;=&nbsp;23 aggregate, the last <em>k</em>&nbsp;=&nbsp;7 layers, and a single layer &#8467;<sub>11</sub>, including the fusion each baseline was trained on.</p>
             </div>
             <div class="key-finding">
                 <span class="key-finding-number">3</span>
@@ -160,7 +160,7 @@
             <h1 class="text">1. Overview</h1>
 
             <p class="text">
-                Representation autoencoders (<a href="https://rae-dit.github.io/" target="_blank">RAE</a><sup><a href="#ref-rae">[1]</a></sup>, <a href="https://raev2.github.io/" target="_blank">RAEv2</a><sup><a href="#ref-raev2">[2]</a></sup>) replace the VAE with a frozen vision encoder, and fuse several encoder layers into one latent. That latent has two jobs at once: shallow layers preserve pixel detail for reconstruction, while deeper layers are easier for the generator to model. Picking one fusion hard-codes the trade-off into both stages.
+                Representation autoencoders (<a href="https://rae-dit.github.io/" target="_blank">RAE</a><sup><a href="#ref-rae">[1]</a></sup>, <a href="https://raev2.github.io/" target="_blank">RAEv2</a><sup><a href="#ref-raev2">[2]</a></sup>) replace the VAE with a frozen vision encoder, and RAEv2 fuses several encoder layers into one latent. That latent has two jobs at once: shallow layers preserve pixel detail for reconstruction, while deeper layers tend to be easier for the generator to model. Picking one fusion hard-codes the trade-off into both stages.
             </p>
 
             <p class="text">
@@ -170,7 +170,7 @@
             <d-figure id="fig-teaser">
                 <figure>
                     <img data-zoomable="" draggable="false" src="assets/images/cosine-similarity.png" alt="Cosine-similarity maps of decoder intermediate-block features for FuseReg and RAEv2 under three layer fusions" style="width: 100%;">
-                    <figcaption><strong>One decoder, every fusion.</strong> Patch-wise cosine similarity at a decoder intermediate block for three query patches (stars). FuseReg (top) keeps stable spatial structure under <em>k</em> = 23, <em>k</em> = 7 and the single layer &#8467;<sub>11</sub>; RAEv2 (bottom) degrades away from its training fusion.</figcaption>
+                    <figcaption><strong>One decoder, three fusions.</strong> Patch-wise cosine similarity at a decoder intermediate block for three query patches (stars), with the reconstruction to the right of each group. FuseReg (top) keeps stable spatial structure under <em>k</em> = 23, <em>k</em> = 7 and the single layer &#8467;<sub>11</sub>; the RAEv2 <em>K</em> = 23 decoder (bottom) degrades away from its training fusion.</figcaption>
                 </figure>
             </d-figure>
         </div>
@@ -181,7 +181,7 @@
             <h1 class="text">2. Method</h1>
 
             <p class="text">
-                For each training sample we draw a random mask over the <em>K</em> encoder layers, keep at least one layer, and average the layers that survive. Averaging by the number of retained layers leaves the latent unchanged in expectation, so the randomization varies only the directions along which encoder layers disagree. A decoder trained on one fixed fusion never sees this variation.
+                For each training sample we draw a random mask over the <em>K</em> encoder layers, keep at least one layer, and average the layers that survive. The latent also keeps a fixed final-layer token-mean term (the <em>L</em>23 surrogate), whichever layers are drawn. Averaging by the number of retained layers leaves the latent unchanged in expectation, so the randomization varies only the directions along which encoder layers disagree. A decoder trained on one fixed fusion never sees this variation.
             </p>
 
             <p class="text">
@@ -202,12 +202,12 @@
             <p class="text">ImageNet-256 with a frozen DINOv3-L encoder; 50k images for reconstruction and 50k samples with 50 Euler steps for generation.</p>
 
             <div id="results-reconstruction" style="margin-top: 1.5em;">
-                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.1 One decoder for every fusion</h2>
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.1 One decoder for different fusions</h2>
 
             <d-figure id="fig-recon-table">
                 <figure>
                     <img data-zoomable="" draggable="false" src="assets/images/reconstruction-table.png" alt="Table: PSNR, SSIM and rFID for RAEv2 K=7, RAEv2 K=23 and FuseReg p=.95 decoders under fusion k=7, k=23 and single layer l11" style="width: 100%;">
-                    <figcaption><strong>One decoder, three fusions.</strong> FuseReg has the best PSNR and SSIM under every fusion; the fixed-fusion decoders keep a lower rFID on their own training fusion. Blue cells mark the fusion each decoder was trained on.</figcaption>
+                    <figcaption><strong>Reconstruction across fusions.</strong> FuseReg has the best PSNR and SSIM under every fusion; the fixed-fusion decoders keep a lower rFID on their own training fusion. Blue cells mark the fusion each decoder was trained on.</figcaption>
                 </figure>
             </d-figure>
 
@@ -264,7 +264,7 @@
             <d-figure id="fig-layer-usage">
                 <figure>
                     <img data-zoomable="" draggable="false" src="assets/images/layer-reliance.png" alt="Leave-one-layer-out PSNR drop and single-layer PSNR for RAEv2 and FuseReg" style="width: 100%;">
-                    <figcaption><strong>Reconstruction spread across depths.</strong> FuseReg has a flatter leave-one-layer-out profile (left) and stronger single-layer readouts (right), on 10,000 held-out images.</figcaption>
+                    <figcaption><strong>Reconstruction spread across depths.</strong> Left: PSNR drop when one layer is left out of the full fusion; FuseReg's profile is much flatter. Right: PSNR from one layer plus the <em>L</em>23 surrogate; FuseReg is higher at every layer. 10,000 held-out ImageNet-256 images.</figcaption>
                 </figure>
             </d-figure>
 
