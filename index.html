@@ -70,6 +70,7 @@
                         <li><a href="#results-reconstruction">3.1 Reconstruction</a></li>
                         <li><a href="#results-swap">3.2 Decoder Swap</a></li>
                         <li><a href="#results-joint">3.3 Joint Regularization</a></li>
+                        <li><a href="#results-encoders">3.4 Other Encoders</a></li>
                     </ul>
                 </li>
                 <li><a href="#analysis">4. Analysis</a></li>
@@ -120,7 +121,7 @@
                 </div>
 
                 <div class="tldr-section">
-                    <p><span class="tldr-label">TL;DR:</span> Instead of committing a representation autoencoder to one hand-picked layer fusion, train the decoder and the diffusion transformer on <strong>random subsets of encoder layers</strong>. One decoder then reconstructs well from different fusions, and swapping it into a fixed generator lowers unguided gFID, with no architecture change and no extra inference cost.</p>
+                    <p><span class="tldr-label">TL;DR:</span> A representation autoencoder builds its latent by averaging layers of a frozen vision encoder, and which layers to use is usually picked by hand. FuseReg instead trains the decoder and the diffusion model on a <strong>random mix of layers</strong> at every step. The resulting decoder reconstructs well from many different mixes, and generated images get better, with no change to the model or its inference cost.</p>
                 </div>
 
                 <div class="button-row">
@@ -142,15 +143,15 @@
             <h4 class="key-findings-title">Key Findings</h4>
             <div class="key-finding">
                 <span class="key-finding-number">1</span>
-                <p class="key-finding-text"><strong>Treat layer fusion as a training distribution, not a fixed choice.</strong> Averaging a random non-empty subset of encoder layers per sample puts every subset-mean fusion in the training support, instead of committing the decoder and generator to one fixed aggregate.</p>
+                <p class="key-finding-text"><strong>A fixed layer choice forces a trade-off.</strong> Shallow encoder layers keep pixel detail, which helps reconstruction; deeper layers are easier for the diffusion model to generate. With RAEv2 on DINOv3-L, using all 23 layers instead of the last 7 raises reconstruction PSNR from 22.58 to 27.04&nbsp;dB, but worsens unguided gFID from 1.65 to 3.01.</p>
             </div>
             <div class="key-finding">
                 <span class="key-finding-number">2</span>
-                <p class="key-finding-text"><strong>One decoder serves different readouts.</strong> A single FuseReg decoder reaches higher PSNR and SSIM than fixed-fusion decoders on the full <em>k</em>&nbsp;=&nbsp;23 aggregate, the last <em>k</em>&nbsp;=&nbsp;7 layers, and a single layer &#8467;<sub>11</sub>, including the fusion each baseline was trained on.</p>
+                <p class="key-finding-text"><strong>Training on random layer mixes gives one decoder for many mixes.</strong> The same FuseReg decoder reconstructs from all 23 layers, from the last 7, or from a single layer, with higher PSNR than decoders trained for any one of them.</p>
             </div>
             <div class="key-finding">
                 <span class="key-finding-number">3</span>
-                <p class="key-finding-text"><strong>Two stages, two rates.</strong> The decoder and the DiT are regularized with separate rates. A strongly regularized decoder helps at both scales; regularizing the DiT as well gives the best DiT-Base result, 13.96 &rarr; 9.93 gFID.</p>
+                <p class="key-finding-text"><strong>Generation improves too.</strong> Keeping a trained diffusion model and its samples fixed and only swapping in the FuseReg decoder lowers unguided gFID from 3.01 to 2.21. Training the diffusion model the same way brings DiT-Base from 13.96 to 9.93, and the gains carry over to the SigLIP2 and EUPE encoders.</p>
             </div>
         </div>
 
@@ -160,17 +161,21 @@
             <h1 class="text">1. Overview</h1>
 
             <p class="text">
-                Representation autoencoders (<a href="https://rae-dit.github.io/" target="_blank">RAE</a><sup><a href="#ref-rae">[1]</a></sup>, <a href="https://raev2.github.io/" target="_blank">RAEv2</a><sup><a href="#ref-raev2">[2]</a></sup>) replace the VAE with a frozen vision encoder, and RAEv2 fuses several encoder layers into one latent. That latent has two jobs at once: shallow layers preserve pixel detail for reconstruction, while deeper layers tend to be easier for the generator to model. Picking one fusion hard-codes the trade-off into both stages.
+                A representation autoencoder (<a href="https://rae-dit.github.io/" target="_blank">RAE</a><sup><a href="#ref-rae">[1]</a></sup>) generates images in the feature space of a pretrained vision encoder such as DINOv3<sup><a href="#ref-dinov3">[3]</a></sup>. The encoder stays frozen; a diffusion model learns to generate encoder features, and a decoder turns those features back into pixels. <a href="https://raev2.github.io/" target="_blank">RAEv2</a><sup><a href="#ref-raev2">[2]</a></sup> builds the latent by fusing several encoder layers, and picks the layers by hand.
             </p>
 
             <p class="text">
-                <strong>FuseReg</strong> turns the choice into a training distribution. Each training sample averages a random non-empty subset of encoder layers. The decoder learns to reconstruct from changing layer compositions, and the diffusion transformer learns from noisy subset representations while targeting the full-layer fusion. At inference the full-layer mean is used, so nothing about the architecture or the sampling cost changes.
+                That choice matters because the decoder and the diffusion model want different things. Shallow layers keep fine pixel detail, which helps the decoder reconstruct the image. Deeper layers are more semantic and tend to be easier for the diffusion model to generate. One fixed fusion makes both stages live with the same compromise.
+            </p>
+
+            <p class="text">
+                <strong>FuseReg</strong> removes the fixed choice during training. Each training example uses the average of a randomly chosen subset of layers, so the decoder learns to reconstruct from many different mixes instead of one. The diffusion model is trained the same way: it sees a random mix and learns to predict the all-layer average. At test time both use the all-layer average, so the architecture, sampler and inference cost stay the same.
             </p>
 
             <d-figure id="fig-teaser">
                 <figure>
                     <img data-zoomable="" draggable="false" src="assets/images/cosine-similarity.png" alt="Cosine-similarity maps of decoder intermediate-block features for FuseReg and RAEv2 under three layer fusions" style="width: 100%;">
-                    <figcaption><strong>One decoder, three fusions.</strong> Patch-wise cosine similarity at a decoder intermediate block for three query patches (stars), with the reconstruction to the right of each group. FuseReg (top) keeps stable spatial structure under <em>k</em> = 23, <em>k</em> = 7 and the single layer &#8467;<sub>11</sub>; the RAEv2 <em>K</em> = 23 decoder (bottom) degrades away from its training fusion.</figcaption>
+                    <figcaption><strong>What the decoder sees under different layer mixes.</strong> Each map shows, inside the decoder, how similar every image patch is to the patch marked by a star; the last image in each group is the reconstruction. With FuseReg (top), the maps stay clean and the reconstruction stays sharp whether the decoder gets all 23 layers, the last 7, or layer 11 alone. The RAEv2 decoder trained on all 23 layers (bottom) loses this structure on the other two inputs.</figcaption>
                 </figure>
             </d-figure>
         </div>
@@ -181,16 +186,16 @@
             <h1 class="text">2. Method</h1>
 
             <p class="text">
-                For each training sample we draw a random mask over the <em>K</em> encoder layers, keep at least one layer, and average the layers that survive. The latent also keeps a fixed final-layer token-mean term (the <em>L</em>23 surrogate), whichever layers are drawn. Averaging by the number of retained layers leaves the latent unchanged in expectation, so the randomization varies only the directions along which encoder layers disagree. A decoder trained on one fixed fusion never sees this variation.
+                For every training image, each of the <em>K</em> encoder layers is dropped at random with probability <em>p</em>, at least one layer is kept, and the kept layers are averaged. Every layer is equally likely to be kept, so on average the result equals the all-layer average; what changes from sample to sample is only where the layers disagree with each other. The model therefore learns not to depend on the quirks of any one layer. The latent also always includes a fixed summary of the final layer (its token mean, marked <em>L</em>23 surrogate in the figures).
             </p>
 
             <p class="text">
-                The same idea applies to the generator: the DiT sees noisy subset representations and predicts the full-layer target. Because reconstruction and generation are different prediction problems, the two stages use separate rates, <em>p</em><sub>dec</sub> and <em>p</em><sub>dit</sub>.
+                The decoder and the diffusion model each get their own drop rate, <em>p</em><sub>dec</sub> and <em>p</em><sub>dit</sub>. A rate of 0 means no regularization, which is the RAEv2 baseline.
             </p>
 
             <div class="finding-box">
                 <ul>
-                    <li><strong>No cost at inference.</strong> FuseReg changes only what the decoder and DiT see during training. The architecture, the latent size and the sampler are unchanged.</li>
+                    <li><strong>No extra cost at inference.</strong> FuseReg only changes what the decoder and the diffusion model see during training. The architecture, the latent size and the sampler are unchanged.</li>
                 </ul>
             </div>
         </div>
@@ -199,37 +204,41 @@
 
         <div id="results" class="results-block">
             <h1 class="text">3. Results</h1>
-            <p class="text">ImageNet-256 with a frozen DINOv3-L encoder; 50k images for reconstruction and 50k samples with 50 Euler steps for generation.</p>
+            <p class="text">Unless noted, experiments use ImageNet at 256&times;256 and a frozen DINOv3-L encoder with 23 layers. Reconstruction is measured on 50,000 images with PSNR and SSIM (higher is better) and rFID (lower is better). Generation is measured on 50,000 samples, drawn with 50 Euler steps, with gFID (lower is better) and Inception Score, IS (higher is better).</p>
 
             <div id="results-reconstruction" style="margin-top: 1.5em;">
                 <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.1 One decoder for different fusions</h2>
 
+                <p class="text">
+                    Each RAEv2 decoder is trained on one fixed fusion: the last 7 layers (<em>K</em>&nbsp;=&nbsp;7) or all 23 (<em>K</em>&nbsp;=&nbsp;23). We test every decoder on both fusions and on layer 11 alone.
+                </p>
+
             <d-figure id="fig-recon-table">
                 <figure>
                     <img data-zoomable="" draggable="false" src="assets/images/reconstruction-table.png" alt="Table: PSNR, SSIM and rFID for RAEv2 K=7, RAEv2 K=23 and FuseReg p=.95 decoders under fusion k=7, k=23 and single layer l11" style="width: 100%;">
-                    <figcaption><strong>Reconstruction across fusions.</strong> FuseReg has the best PSNR and SSIM under every fusion; the fixed-fusion decoders keep a lower rFID on their own training fusion. Blue cells mark the fusion each decoder was trained on.</figcaption>
+                    <figcaption><strong>Reconstruction across fusions.</strong> Each RAEv2 decoder does well only on the fusion it was trained on (blue cells) and falls to 12.5&ndash;18.4&nbsp;dB on the others. The single FuseReg decoder (<em>p</em><sub>dec</sub>&nbsp;=&nbsp;0.95) has the best PSNR and SSIM on all three. Its rFID stays below 0.6, although each specialized decoder has a lower rFID on its own fusion.</figcaption>
                 </figure>
             </d-figure>
 
             <d-figure id="fig-recon">
                 <figure style="max-width: 78%; margin: 0 auto;">
                     <img data-zoomable="" draggable="false" src="assets/images/reconstruction-readouts.png" alt="Reconstructions from the last seven layers and from layer 11 for RAEv2 and FuseReg decoders" style="width: 100%;">
-                    <figcaption><strong>Reconstruction off the training fusion.</strong> Fixed-fusion RAEv2 decoders break down away from their training aggregate; FuseReg does not. Insets show PSNR in dB.</figcaption>
+                    <figcaption><strong>Reconstructions from partial inputs.</strong> Left box: the decoders get the last 7 layers; right box: layer 11 only. The RAEv2 decoder trained on 23 layers turns grey, and the one trained on 7 layers fades on layer 11. FuseReg has the highest PSNR (inset, dB) on every image.</figcaption>
                 </figure>
             </d-figure>
             </div>
 
             <div id="results-swap" style="margin-top: 1.5em;">
-                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.2 Swapping only the decoder</h2>
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.2 A better decoder alone improves generation</h2>
 
                 <p class="text">
-                    Keeping the generator fixed and swapping only the decoder isolates the decoder's contribution: within each setting, every decoder renders the same 50k sampled latents.
+                    To isolate the decoder, we take a trained RAEv2 diffusion model, generate one fixed set of 50,000 latents, and decode the same latents with decoders trained at increasing <em>p</em><sub>dec</sub>. Any change in image quality comes from the decoder alone. We do this for an RAEv2 generator trained on all 23 layers and one trained on the last 7; all decoders are trained on the 23-layer pool, so the plain decoder is mismatched with the 7-layer generator.
                 </p>
 
             <d-figure id="fig-swap">
                 <figure>
                     <img data-zoomable="" draggable="false" src="assets/images/decoder-swap.png" alt="gFID and Inception Score across decoder layer-drop rates for k=23 and k=7 readouts, with and without guidance" style="width: 100%;">
-                    <figcaption><strong>Same generator, same latents.</strong> Without guidance, swapping in a regularized decoder alone lowers gFID from <strong>3.01 &rarr; 2.21</strong> at <em>k</em> = 23 and from <strong>27.73 &rarr; 1.92</strong> at <em>k</em> = 7.</figcaption>
+                    <figcaption><strong>Same generator, same latents, different decoders.</strong> Horizontal axis: decoder rate <em>p</em><sub>dec</sub> (0 is the plain RAEv2 decoder). Orange: gFID; blue: IS. Without guidance, gFID drops from <strong>3.01 to 2.21</strong> with the 23-layer generator and from <strong>27.73 to 1.92</strong> with the 7-layer generator. With guidance, the 23-layer generator ends where it started (1.25), and the 7-layer generator improves from 16.35 to 1.42.</figcaption>
                 </figure>
             </d-figure>
             </div>
@@ -237,18 +246,37 @@
             <div id="results-joint" style="margin-top: 1.5em;">
                 <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.3 Regularizing both stages</h2>
 
+                <p class="text">
+                    Next we also train the diffusion model on random layer mixes. The grids cover every combination of decoder rate (columns) and generator rate (rows). The green box is the RAEv2 baseline; blue cells beat it and orange cells are worse.
+                </p>
+
             <d-figure id="fig-joint">
                 <figure>
                     <img data-zoomable="" draggable="false" src="assets/images/joint-regularization-table.png" alt="Table: gFID and IS grids over generator rate p_dit and decoder rate p_dec for DiT-Base and DiT-XL" style="width: 100%;">
-                    <figcaption><strong>Two stages, two scales.</strong> Unguided ImageNet-256, 40 epochs. Rows: <em>p</em><sub>dit</sub>; columns: <em>p</em><sub>dec</sub>; the green box is the fixed-fusion baseline. Best gFID: <strong>9.93</strong> on DiT-Base and <strong>2.38</strong> on DiT-XL.</figcaption>
+                    <figcaption><strong>Two stages, two model sizes.</strong> Unguided generation after 40 training epochs. On DiT-Base, regularizing only the decoder or only the generator improves gFID a little (13.96 to 12.96 and 12.09); doing both gives <strong>9.93</strong>, more than the two gains added together. On the larger DiT-XL, the strongly regularized decoder gives the best gFID (2.91 to <strong>2.38</strong>).</figcaption>
                 </figure>
             </d-figure>
 
                 <div class="finding-box">
                     <ul>
-                        <li><strong>The best generator rate depends on scale.</strong> DiT-Base is best with both stages regularized (<em>p</em><sub>dec</sub>&nbsp;=&nbsp;0.9, <em>p</em><sub>dit</sub>&nbsp;=&nbsp;0.7). On DiT-XL the decoder rate does most of the work: at <em>p</em><sub>dec</sub>&nbsp;=&nbsp;0.95, gFID stays between 2.38 and 2.45 for every <em>p</em><sub>dit</sub>.</li>
+                        <li><strong>The best generator rate depends on model size.</strong> DiT-Base does best with both stages regularized (<em>p</em><sub>dec</sub>&nbsp;=&nbsp;0.9, <em>p</em><sub>dit</sub>&nbsp;=&nbsp;0.7). For DiT-XL the decoder rate matters most: at <em>p</em><sub>dec</sub>&nbsp;=&nbsp;0.95, gFID stays between 2.38 and 2.45 whatever <em>p</em><sub>dit</sub> is.</li>
                     </ul>
                 </div>
+            </div>
+
+            <div id="results-encoders" style="margin-top: 1.5em;">
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.4 Beyond DINOv3</h2>
+
+                <p class="text">
+                    We repeat the DiT-Base experiment with two other frozen encoders: SigLIP2-L<sup><a href="#ref-siglip2">[4]</a></sup>, a vision-language encoder with 23 layers, and EUPE-B<sup><a href="#ref-eupe">[5]</a></sup>, a smaller ViT-B encoder with 11 layers. The training recipe is the same, with rates 0, 0.3, 0.6 and 0.9. With both encoders, FuseReg decoders also reconstruct much better from partial inputs than the fixed-fusion decoder (paper, Appendix&nbsp;E).
+                </p>
+
+            <d-figure id="fig-encoders">
+                <figure>
+                    <img data-zoomable="" draggable="false" src="assets/images/other-encoders-table.png" alt="Table: gFID and IS grids over generator rate p_dit and decoder rate p_dec for SigLIP2-L and EUPE-B encoders with DiT-Base" style="width: 100%;">
+                    <figcaption><strong>The same pattern with other encoders.</strong> Unguided DiT-Base generation; the green box is each encoder's fixed-fusion baseline. In every row, a more strongly regularized decoder gives lower gFID and higher IS. Regularizing both stages lowers gFID from <strong>13.77 to 8.26</strong> with SigLIP2-L and from <strong>12.17 to 8.00</strong> with EUPE-B. The best generator rate again depends on the setting; with EUPE-B, the highest generator rate alone (<em>p</em><sub>dit</sub>&nbsp;=&nbsp;0.9, <em>p</em><sub>dec</sub>&nbsp;=&nbsp;0) is worse than the baseline.</figcaption>
+                </figure>
+            </d-figure>
             </div>
         </div>
 
@@ -258,17 +286,15 @@
             <h1 class="text">4. Analysis</h1>
 
             <p class="text">
-                The encoder is frozen throughout, so the decoder's gains come from how it reads a fixed representation, not from better features. FuseReg relies less on any single layer and reconstructs better from individual layers.
+                Why does this work? The encoder never changes, so the improvement comes from how the decoder reads it. To see this, we measure how much the decoder depends on each layer. FuseReg spreads what it needs across the whole encoder instead of leaning on a few shallow layers.
             </p>
 
             <d-figure id="fig-layer-usage">
                 <figure>
                     <img data-zoomable="" draggable="false" src="assets/images/layer-reliance.png" alt="Leave-one-layer-out PSNR drop and single-layer PSNR for RAEv2 and FuseReg" style="width: 100%;">
-                    <figcaption><strong>Reconstruction spread across depths.</strong> Left: PSNR drop when one layer is left out of the full fusion; FuseReg's profile is much flatter. Right: PSNR from one layer plus the <em>L</em>23 surrogate; FuseReg is higher at every layer. 10,000 held-out ImageNet-256 images.</figcaption>
+                    <figcaption><strong>How much the decoder relies on each layer.</strong> Left: PSNR lost when one layer is removed from the full mix. The RAEv2 decoder depends heavily on the first few layers; FuseReg barely depends on any single one. Right: PSNR when the decoder gets only one layer plus the fixed final-layer summary. FuseReg is higher at every layer, by up to about 19&nbsp;dB. Measured on 10,000 held-out images.</figcaption>
                 </figure>
             </d-figure>
-
-
         </div>
 
         <hr>
@@ -277,7 +303,7 @@
             <h1 class="text">5. Conclusion</h1>
 
             <p class="text">
-                Layer fusion in a representation autoencoder does not have to be decided once and baked into the decoder and the generator. Training over random layer subsets gives one decoder that works across fusions, and lowers gFID at both DiT scales we test, at no additional inference cost and with the encoder left untouched.
+                Which encoder layers a representation autoencoder uses does not have to be decided once and fixed. Training on random layer mixes gives a decoder that works with many mixes and a diffusion model that generates better images. This holds for DINOv3-L at two model sizes and for the SigLIP2-L and EUPE-B encoders, with the encoder, architecture and inference cost unchanged. All experiments are on ImageNet at 256&times;256.
             </p>
         </div>
 
@@ -302,6 +328,8 @@
             <li id="ref-rae">Zheng, B., Ma, N., Tong, S., &amp; Xie, S. (2025). Diffusion Transformers with Representation Autoencoders. <em><a href="https://arxiv.org/abs/2510.11690" target="_blank">arXiv:2510.11690</a></em>.</li>
             <li id="ref-raev2">Singh, J., Zheng, B., Wu, Z., Zhang, R., Shechtman, E., &amp; Xie, S. (2026). Improved Baselines with Representation Autoencoders. <em><a href="https://arxiv.org/abs/2605.18324" target="_blank">arXiv:2605.18324</a></em>.</li>
             <li id="ref-dinov3">Sim&eacute;oni, O., et al. (2025). DINOv3. <em><a href="https://arxiv.org/abs/2508.10104" target="_blank">arXiv:2508.10104</a></em>.</li>
+            <li id="ref-siglip2">Tschannen, M., et al. (2025). SigLIP 2: Multilingual Vision-Language Encoders with Improved Semantic Understanding, Localization, and Dense Features. <em><a href="https://arxiv.org/abs/2502.14786" target="_blank">arXiv:2502.14786</a></em>.</li>
+            <li id="ref-eupe">Zhu, C., et al. (2026). Efficient Universal Perception Encoder. <em><a href="https://arxiv.org/abs/2603.22387" target="_blank">arXiv:2603.22387</a></em>.</li>
         </ol>
     </d-appendix>
     </body>
