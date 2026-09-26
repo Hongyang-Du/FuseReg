@@ -67,7 +67,7 @@ python scripts/plan_reproduction.py --id 'recon-p0p95-*' \
 
 Paths in bindings are relative to `--assets-root`, or absolute. The names above are examples to replace with real assets. FuseReg reconstruction runs encoder → combiner → decoder directly and needs no separate latent statistics; reconstruction FID uses the same reference images. Generation and official RAEv2 models need their own compatible normalization assets. The current FID evaluator takes reference images, not a cached FID-statistics file.
 
-The plan reports `missing`, `size_mismatch`, or `present_unverified` for each asset. Existing files remain unverified: the planner does not inspect model state, validate hashes or approve protocol compatibility. It intentionally leaves `runnable: false` until a separate model/protocol review and actual evaluation establish readiness. Local plans contain local paths and should not be included in the anonymous submission.
+The plan reports `missing`, `size_mismatch`, or `present_unverified` for each asset. Existing files remain unverified: the planner does not inspect model state, validate hashes or approve protocol compatibility. It intentionally leaves `runnable: false` until a separate model/protocol review and actual evaluation establish readiness. Local plans contain local paths and should not be committed.
 
 ## Run a reconstruction table
 

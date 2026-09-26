@@ -47,7 +47,7 @@ Averaging over the retained layers keeps the deployment latent unchanged in expe
   <img src="assets/figures/joint-regularization-table.png" width="100%" alt="Paper Table 2: gFID and IS grids over generator rate p_dit (rows) and decoder rate p_dec (columns) for DiT-Base and DiT-XL. Best DiT-Base gFID is 9.93 at p_dec=0.9, p_dit=0.7; best DiT-XL gFID is 2.38 at p_dec=0.95, p_dit=0.">
 </p>
 
-**Two stages, two scales.** Unguided ImageNet-256. Regularizing both stages gives the best gFID: **13.96 → 9.93** on DiT-Base and **2.91 → 2.38** on DiT-XL, against the fixed-fusion baseline in the green box.
+**Two stages, two scales.** Unguided ImageNet-256; the green box is the fixed-fusion baseline. On DiT-Base, regularizing both stages gives the best gFID (**13.96 → 9.93** at p<sub>dec</sub>=0.9, p<sub>dit</sub>=0.7). On DiT-XL, the decoder rate accounts for most of the gain (**2.91 → 2.38** at p<sub>dec</sub>=0.95, p<sub>dit</sub>=0); at that decoder rate, p<sub>dit</sub> moves gFID by at most 0.07.
 
 ### Fixed generator, swapped decoders
 
@@ -55,7 +55,7 @@ Averaging over the retained layers keeps the deployment latent unchanged in expe
   <img src="assets/figures/decoder-swap.png" width="100%" alt="Paper decoder-swap results: gFID and Inception Score across decoder layer-drop rates for K23 and K7 readouts, without guidance and with internal guidance 1.78.">
 </p>
 
-**Same generator, same latents.** Swapping in a regularized decoder alone lowers gFID from **3.01 → 2.21** at *k*=23 and from **27.73 → 1.92** at *k*=7.
+**Same generator, same latents.** Without guidance, swapping in a regularized decoder alone lowers gFID from **3.01 → 2.21** at *k*=23 and from **27.73 → 1.92** at *k*=7.
 
 ### One decoder, different layer readouts
 

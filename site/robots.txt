@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://hongyang-du.github.io/FuseReg/sitemap.xml
