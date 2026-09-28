@@ -34,12 +34,12 @@
 
         <meta property="og:url" content="https://hongyang-du.github.io/FuseReg/" />
         <meta property="og:title" content="Regularizing Layer Fusion in Representation Autoencoders" />
-        <meta property="og:description" content="Training the decoder and diffusion transformer of a representation autoencoder on random subsets of encoder layers." />
+        <meta property="og:description" content="FuseReg avoids hand-picking one encoder layer mix by training image generators on many random layer combinations." />
         <meta property="og:image" content="https://hongyang-du.github.io/FuseReg/assets/images/cosine-similarity.png" />
         <meta property="og:type" content="article" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Regularizing Layer Fusion in Representation Autoencoders" />
-        <meta name="twitter:description" content="Training the decoder and diffusion transformer of a representation autoencoder on random subsets of encoder layers." />
+        <meta name="twitter:description" content="FuseReg avoids hand-picking one encoder layer mix by training image generators on many random layer combinations." />
         <meta name="twitter:image" content="https://hongyang-du.github.io/FuseReg/assets/images/cosine-similarity.png" />
 
         <script src="./static/js/distill_template.v2.js"></script>
@@ -123,7 +123,7 @@
                 </div>
 
                 <div class="tldr-section">
-                    <p><span class="tldr-label">TL;DR:</span> A representation autoencoder builds its latent by averaging layers of a frozen vision encoder, and which layers to use is usually picked by hand. FuseReg instead trains the decoder and the diffusion model on a <strong>random mix of layers</strong> at every step. The resulting decoder reconstructs well from many different mixes, and generated images get better, with no change to the model or its inference cost.</p>
+                    <p><span class="tldr-label">TL;DR:</span> Representation autoencoders usually have to hand-pick which encoder layers to average. Earlier layers keep more visual detail, while later layers keep more high-level meaning, so one fixed choice is a compromise. FuseReg trains on <strong>many random layer mixes</strong> instead of one fixed mix, which improves both reconstruction and generation without changing test-time cost.</p>
                 </div>
 
                 <div class="button-row">
@@ -145,15 +145,15 @@
             <h4 class="key-findings-title">Key Findings</h4>
             <div class="key-finding">
                 <span class="key-finding-number">1</span>
-                <p class="key-finding-text"><strong>A fixed layer choice forces a trade-off.</strong> Shallow encoder layers keep pixel detail, which helps reconstruction; deeper layers are easier for the diffusion model to generate. With RAEv2 on DINOv3-L, using all 23 layers instead of the last 7 raises reconstruction PSNR from 22.58 to 27.04&nbsp;dB, but worsens unguided gFID from 1.65 to 3.01.</p>
+                <p class="key-finding-text"><strong>There is a built-in trade-off.</strong> Earlier encoder layers preserve visual detail, while later layers preserve higher-level meaning. Standard methods pick one fixed mix, so reconstruction and generation have to share the same compromise.</p>
             </div>
             <div class="key-finding">
                 <span class="key-finding-number">2</span>
-                <p class="key-finding-text"><strong>Training on random layer mixes gives one decoder for many mixes.</strong> The same FuseReg decoder reconstructs from all 23 layers, from the last 7, or from a single layer, with higher PSNR than decoders trained for any one of them.</p>
+                <p class="key-finding-text"><strong>FuseReg removes the need to hand-pick one mix.</strong> During training, it randomly varies which encoder layers are used, so the model learns to work with many combinations instead of one brittle choice.</p>
             </div>
             <div class="key-finding">
                 <span class="key-finding-number">3</span>
-                <p class="key-finding-text"><strong>Generation improves too.</strong> Keeping a trained diffusion model and its samples fixed and only swapping in the FuseReg decoder lowers unguided gFID from 3.01 to 2.21. Training the diffusion model the same way brings DiT-Base from 13.96 to 9.93, and the gains carry over to the SigLIP2 and EUPE encoders.</p>
+                <p class="key-finding-text"><strong>This improves quality without changing inference.</strong> The model reconstructs and generates better images, while keeping the same architecture and test-time cost.</p>
             </div>
         </div>
 
