@@ -15,7 +15,7 @@
 </p>
 
 <p>
-  <a href="https://hongyang-du.github.io/FuseReg/"><img src="https://img.shields.io/badge/Project_Page-FuseReg-1769aa?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Website"></a>
+  <a href="https://hongyang-du.github.io/FuseReg/"><img src="https://img.shields.io/badge/Website-FuseReg-1769aa?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Website"></a>
   <a href="https://arxiv.org/abs/2609.31620"><img src="https://img.shields.io/badge/arXiv-2609.31620-b31b1b?style=for-the-badge&logo=arxiv&logoColor=white" alt="arXiv"></a>
   <a href="https://huggingface.co/Hongyang-Du/FuseReg"><img src="https://img.shields.io/badge/Hugging_Face-Models-ffd21e?style=for-the-badge&logo=huggingface&logoColor=black" alt="Hugging Face models"></a>
 </p>
