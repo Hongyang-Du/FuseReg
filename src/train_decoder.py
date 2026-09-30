@@ -139,7 +139,7 @@ def main():
     disc.dino_proxy[0].crop = RandomWindowCrop(D.image_size, 224, 9, False)
     disc.dino_proxy[0].original_input_size = D.image_size
     disc_ddp = DDP(disc, device_ids=[local_rank])
-    disc_aug = DiffAug(prob=0.5, cutout=True)
+    disc_aug = DiffAug(prob=0.5, cutout=0.2)
     disc_optimizer = torch.optim.Adam(disc.parameters(), lr=1e-4, betas=(0.5, 0.9))
     disc_start_step = L.gan.disc_start * len(train_loader)
 
