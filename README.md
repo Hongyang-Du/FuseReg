@@ -36,6 +36,20 @@ Representation autoencoders such as RAEv2 ask one fused latent to serve two diff
 
 Averaging over the retained layers keeps the deployment latent unchanged in expectation, so randomization varies only the directions along which encoder layers disagree. The two stages use separate rates, `p_dec` and `p_dit`.
 
+### The core change, in five lines
+
+Replace RAEv2's fixed layer mean with a per-sample random subset mean during training. On DiT-Base this alone lowers unguided gFID from **13.96 to 9.93 (−29%)**.
+
+```python
+H = torch.stack(layer_tokens)                    # [K, B, N, D]: K encoder layers
+keep = torch.rand(K, B) > p                      # each sample keeps each layer w.p. 1-p (empty draw -> keep one)
+w = keep / keep.sum(0)                           # mean over the retained layers only
+z = (w[..., None, None] * H).sum(0)              # p = 0 recovers the RAEv2 full-layer mean
+z = z + H[-1].mean(1, keepdim=True)              # fixed final-layer token-mean surrogate
+```
+
+The decoder reconstructs the image from `z` with `p = p_dec`. The DiT takes the noisy `z` with `p = p_dit` as input and still targets the full-layer mean (`p = 0`). At inference `p = 0`, so the latent, architecture and cost are unchanged. See [`src/stage1/combine.py`](src/stage1/combine.py) for the full implementation.
+
 ## Results
 
 ### One regularizer, two stages, two scales
