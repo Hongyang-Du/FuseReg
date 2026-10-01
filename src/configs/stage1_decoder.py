@@ -11,10 +11,16 @@ class DecoderModuleConfig:
     num_patches: int = 256
 
 @dataclass
+class DiscAugmentConfig:
+    prob: float = 1.0
+    cutout: float = 0.0            # cutout side ratio; 0 disables cutout
+
+@dataclass
 class GanConfig:
     disc_weight: float = 0.75
     disc_start: int = 1            # epoch GAN turns on
     disc_ckpt: str = "pretrained_models/encoders/dino/dino_vit_small_patch8_224.pth"
+    augment: DiscAugmentConfig = field(default_factory=DiscAugmentConfig)
 
 @dataclass
 class LossConfig:

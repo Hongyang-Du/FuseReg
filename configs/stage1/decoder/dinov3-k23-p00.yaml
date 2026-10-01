@@ -39,6 +39,9 @@ loss:
   gan:
     disc_weight: 0.75
     disc_start: 8
+    augment:
+      prob: 1.0
+      cutout: 0.0
 data:
   data_dir: data/imagenet-256
   image_size: 256
