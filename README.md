@@ -38,7 +38,7 @@ Averaging over the retained layers keeps the deployment latent unchanged in expe
 
 ### The core change, in five lines
 
-Replace RAEv2's fixed layer mean with a per-sample random subset mean during training. On DiT-Base this alone lowers unguided gFID from **13.96 to 9.93 (−29%)**.
+Replace RAEv2's fixed layer mean with a per-sample random subset mean during training. DiT-Base gFID drops by **29%** with DINOv3-L, **40%** with SigLIP2-L and **34%** with EUPE-B.
 
 ```python
 H = torch.stack(layer_tokens)                    # [K, B, N, D]: K encoder layers
